@@ -60,6 +60,16 @@ const PERMISSOES: { acao: string; papeis: Papel[] }[] = [
 
 type Usuario = Awaited<ReturnType<typeof listarUsuarios>>[number];
 
+type DadosAtualizacao = {
+  usuarioId: string;
+  nome: string;
+  matricula: string;
+  cargo: string;
+  orgao: string;
+  ativo: boolean;
+  papel: Papel;
+};
+
 function papelDe(u: Usuario): Papel {
   const p = u.papeis;
   return (["ADMIN", "REVISOR", "ANALISTA", "CONSULTA"] as Papel[]).find((x) => p.includes(x)) ??
