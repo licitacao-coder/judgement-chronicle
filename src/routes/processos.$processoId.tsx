@@ -278,6 +278,8 @@ function PaginaProcesso() {
     ["ORGAO", "Órgão/Entidade"],
     ["PLATAFORMA", "Plataforma eletrônica"],
     ["DATA_HORARIO_SESSAO", "Data e horário da sessão"],
+    ["DATA_SESSAO", "Data da sessão"],
+    ["HORARIO_SESSAO", "Horário da sessão"],
     ["GRUPO_LOTE", "Grupo/Lote/Itens"],
     ["AGENTE", "Agente de contratação/Pregoeiro"],
     ["MATRICULA", "Matrícula"],
