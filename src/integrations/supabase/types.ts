@@ -59,6 +59,42 @@ export type Database = {
         }
         Relationships: []
       }
+      configuracao_template: {
+        Row: {
+          ativo: boolean
+          campos: Json
+          created_at: string
+          id: string
+          nome: string
+          observacoes: string | null
+          secoes: Json
+          updated_at: string
+          usuario_atualizacao: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          campos?: Json
+          created_at?: string
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          secoes?: Json
+          updated_at?: string
+          usuario_atualizacao?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          campos?: Json
+          created_at?: string
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          secoes?: Json
+          updated_at?: string
+          usuario_atualizacao?: string | null
+        }
+        Relationships: []
+      }
       dados_extraidos: {
         Row: {
           campo: string
