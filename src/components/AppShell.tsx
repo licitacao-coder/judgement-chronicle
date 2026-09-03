@@ -45,6 +45,9 @@ export function AppShell({
               <Link to="/" className="hover:underline">
                 Processos
               </Link>
+              <Link to="/documentos" className="hover:underline">
+                Documentos
+              </Link>
               {ehAdministrador ? (
                 <>
                   <Link to="/usuarios" className="hover:underline">
@@ -56,6 +59,7 @@ export function AppShell({
                 </>
               ) : null}
             </nav>
+
             <div className="text-right text-xs text-sidebar-foreground/80">
               <p>{perfil?.nome ?? user.email}</p>
               <p className="text-sidebar-foreground/60">{papel}</p>

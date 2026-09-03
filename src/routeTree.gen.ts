@@ -12,8 +12,10 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
+import { Route as DocumentosRouteImport } from './routes/documentos'
 import { Route as UsuariosRouteImport } from './routes/usuarios'
 import { Route as ProcessosProcessoIdRouteImport } from './routes/processos.$processoId'
+import { Route as ApiPublicSeedUsuariosRouteImport } from './routes/api/public/seed-usuarios'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -30,6 +32,11 @@ const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
   path: '/configuracoes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DocumentosRoute = DocumentosRouteImport.update({
+  id: '/documentos',
+  path: '/documentos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const UsuariosRoute = UsuariosRouteImport.update({
   id: '/usuarios',
   path: '/usuarios',
@@ -40,50 +47,78 @@ const ProcessosProcessoIdRoute = ProcessosProcessoIdRouteImport.update({
   path: '/processos/$processoId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicSeedUsuariosRoute = ApiPublicSeedUsuariosRouteImport.update({
+  id: '/api/public/seed-usuarios',
+  path: '/api/public/seed-usuarios',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/configuracoes': typeof ConfiguracoesRoute
+  '/documentos': typeof DocumentosRoute
   '/usuarios': typeof UsuariosRoute
   '/processos/$processoId': typeof ProcessosProcessoIdRoute
+  '/api/public/seed-usuarios': typeof ApiPublicSeedUsuariosRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/configuracoes': typeof ConfiguracoesRoute
+  '/documentos': typeof DocumentosRoute
   '/usuarios': typeof UsuariosRoute
   '/processos/$processoId': typeof ProcessosProcessoIdRoute
+  '/api/public/seed-usuarios': typeof ApiPublicSeedUsuariosRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/configuracoes': typeof ConfiguracoesRoute
+  '/documentos': typeof DocumentosRoute
   '/usuarios': typeof UsuariosRoute
   '/processos/$processoId': typeof ProcessosProcessoIdRoute
+  '/api/public/seed-usuarios': typeof ApiPublicSeedUsuariosRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/auth' | '/configuracoes' | '/usuarios' | '/processos/$processoId'
+    | '/'
+    | '/auth'
+    | '/configuracoes'
+    | '/documentos'
+    | '/usuarios'
+    | '/processos/$processoId'
+    | '/api/public/seed-usuarios'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/configuracoes' | '/usuarios' | '/processos/$processoId'
+  to:
+    | '/'
+    | '/auth'
+    | '/configuracoes'
+    | '/documentos'
+    | '/usuarios'
+    | '/processos/$processoId'
+    | '/api/public/seed-usuarios'
   id:
     | '__root__'
     | '/'
     | '/auth'
     | '/configuracoes'
+    | '/documentos'
     | '/usuarios'
     | '/processos/$processoId'
+    | '/api/public/seed-usuarios'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
   ConfiguracoesRoute: typeof ConfiguracoesRoute
+  DocumentosRoute: typeof DocumentosRoute
   UsuariosRoute: typeof UsuariosRoute
   ProcessosProcessoIdRoute: typeof ProcessosProcessoIdRoute
+  ApiPublicSeedUsuariosRoute: typeof ApiPublicSeedUsuariosRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -109,6 +144,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConfiguracoesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/documentos': {
+      id: '/documentos'
+      path: '/documentos'
+      fullPath: '/documentos'
+      preLoaderRoute: typeof DocumentosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/usuarios': {
       id: '/usuarios'
       path: '/usuarios'
@@ -123,6 +165,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProcessosProcessoIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/seed-usuarios': {
+      id: '/api/public/seed-usuarios'
+      path: '/api/public/seed-usuarios'
+      fullPath: '/api/public/seed-usuarios'
+      preLoaderRoute: typeof ApiPublicSeedUsuariosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -130,8 +179,10 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
   ConfiguracoesRoute: ConfiguracoesRoute,
+  DocumentosRoute: DocumentosRoute,
   UsuariosRoute: UsuariosRoute,
   ProcessosProcessoIdRoute: ProcessosProcessoIdRoute,
+  ApiPublicSeedUsuariosRoute: ApiPublicSeedUsuariosRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
