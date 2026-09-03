@@ -15,7 +15,7 @@ export function AppShell({
   descricao?: string;
   acoes?: ReactNode;
 }) {
-  const { user, perfil, papel, carregando, sair } = useAuth();
+  const { user, perfil, papel, carregando, sair, ehAdministrador } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
