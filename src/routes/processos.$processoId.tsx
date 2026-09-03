@@ -100,7 +100,7 @@ function PaginaProcesso() {
   useEffect(() => {
     if (!data || !ocorrencia) return;
     const p = data.processo;
-    const salvos = ((relatorio?.["dados_json"] ?? {}) as unknown as Campos) ?? {};
+    const salvos = (relatorio?.["dados_json"] ?? {}) as unknown as Campos;
     const v = (chave: string, alternativa?: string | number | null) =>
       salvos[chave] ?? (alternativa === null || alternativa === undefined ? "" : String(alternativa));
 
@@ -155,7 +155,7 @@ function PaginaProcesso() {
       DATA_ASSINATURA: v("DATA_ASSINATURA", dataBrasileiraHoje()),
     });
     setChecklist((relatorio?.["checklist"] ?? {}) as unknown as Record<string, boolean>);
-    setDocs(((relatorio?.["documentos_comprobatorios"] ?? []) as unknown as string[]) ?? []);
+    setDocs((relatorio?.["documentos_comprobatorios"] ?? []) as unknown as string[]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, ocorrencia, relatorio, licitante, perfil]);
 
