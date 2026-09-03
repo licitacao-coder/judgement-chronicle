@@ -100,8 +100,7 @@ function Usuarios() {
   });
 
   const atualizar = useMutation({
-    mutationFn: (dados: Parameters<typeof atualizarUsuario>[0]["data"]) =>
-      atualizarUsuario({ data: dados }),
+    mutationFn: (dados: DadosAtualizacao) => atualizarUsuario({ data: dados }),
     onSuccess: () => {
       toast.success("Cadastro atualizado.");
       void queryClient.invalidateQueries({ queryKey: ["usuarios"] });
