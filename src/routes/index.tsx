@@ -245,7 +245,7 @@ function Painel() {
               Nenhum processo analisado até o momento.
             </p>
           ) : null}
-          {((processos ?? []) as Record<string, never>[]).map((p) => {
+          {(processos ?? []).map((p) => {
             const item = p as unknown as {
               id: string;
               modalidade: string | null;
