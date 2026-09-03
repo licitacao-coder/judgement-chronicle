@@ -15,7 +15,7 @@ export function AppShell({
   descricao?: string;
   acoes?: ReactNode;
 }) {
-  const { user, perfil, papel, carregando, sair } = useAuth();
+  const { user, perfil, papel, carregando, sair, ehAdministrador } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -41,6 +41,21 @@ export function AppShell({
             <p className="text-lg">Painel de análise</p>
           </Link>
           <div className="flex items-center gap-4">
+            <nav className="flex items-center gap-3 text-sm">
+              <Link to="/" className="hover:underline">
+                Processos
+              </Link>
+              {ehAdministrador ? (
+                <>
+                  <Link to="/usuarios" className="hover:underline">
+                    Usuários
+                  </Link>
+                  <Link to="/configuracoes" className="hover:underline">
+                    Configurações
+                  </Link>
+                </>
+              ) : null}
+            </nav>
             <div className="text-right text-xs text-sidebar-foreground/80">
               <p>{perfil?.nome ?? user.email}</p>
               <p className="text-sidebar-foreground/60">{papel}</p>

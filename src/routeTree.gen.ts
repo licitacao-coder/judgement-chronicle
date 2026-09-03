@@ -11,6 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
+import { Route as UsuariosRouteImport } from './routes/usuarios'
 import { Route as ProcessosProcessoIdRouteImport } from './routes/processos.$processoId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -23,6 +25,16 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
+  id: '/configuracoes',
+  path: '/configuracoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UsuariosRoute = UsuariosRouteImport.update({
+  id: '/usuarios',
+  path: '/usuarios',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProcessosProcessoIdRoute = ProcessosProcessoIdRouteImport.update({
   id: '/processos/$processoId',
   path: '/processos/$processoId',
@@ -32,30 +44,45 @@ const ProcessosProcessoIdRoute = ProcessosProcessoIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/configuracoes': typeof ConfiguracoesRoute
+  '/usuarios': typeof UsuariosRoute
   '/processos/$processoId': typeof ProcessosProcessoIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/configuracoes': typeof ConfiguracoesRoute
+  '/usuarios': typeof UsuariosRoute
   '/processos/$processoId': typeof ProcessosProcessoIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/configuracoes': typeof ConfiguracoesRoute
+  '/usuarios': typeof UsuariosRoute
   '/processos/$processoId': typeof ProcessosProcessoIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/processos/$processoId'
+  fullPaths:
+    '/' | '/auth' | '/configuracoes' | '/usuarios' | '/processos/$processoId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/processos/$processoId'
-  id: '__root__' | '/' | '/auth' | '/processos/$processoId'
+  to: '/' | '/auth' | '/configuracoes' | '/usuarios' | '/processos/$processoId'
+  id:
+    | '__root__'
+    | '/'
+    | '/auth'
+    | '/configuracoes'
+    | '/usuarios'
+    | '/processos/$processoId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
+  ConfiguracoesRoute: typeof ConfiguracoesRoute
+  UsuariosRoute: typeof UsuariosRoute
   ProcessosProcessoIdRoute: typeof ProcessosProcessoIdRoute
 }
 
@@ -75,6 +102,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/configuracoes': {
+      id: '/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/configuracoes'
+      preLoaderRoute: typeof ConfiguracoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/usuarios': {
+      id: '/usuarios'
+      path: '/usuarios'
+      fullPath: '/usuarios'
+      preLoaderRoute: typeof UsuariosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/processos/$processoId': {
       id: '/processos/$processoId'
       path: '/processos/$processoId'
@@ -88,6 +129,8 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
+  ConfiguracoesRoute: ConfiguracoesRoute,
+  UsuariosRoute: UsuariosRoute,
   ProcessosProcessoIdRoute: ProcessosProcessoIdRoute,
 }
 export const routeTree = rootRouteImport

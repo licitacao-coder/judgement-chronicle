@@ -9,9 +9,9 @@
 - Análise automática: processo, licitantes, ocorrências, linha do tempo, enquadramento preliminar
 - Formulário de revisão em abas com evidências, checklist e pré-visualização
 - Geração do Word oficial com versionamento e auditoria
+- Tela Usuários: cadastro de servidores, perfis de acesso, situação ativo/inativo e matriz de permissões
+- Painel de Configurações: estrutura do template Word (seções, campos, origem do dado e validação de placeholders)
 
 ## Pendente
 - Geração opcional de PDF
-- Telas administrativas (usuários e papéis)
-- Resolver aviso do linter de segurança sobre execução de funções SECURITY DEFINER
 - Teste ponta a ponta com os PDFs enviados (Pregão 9/2026, Grupo 1)
