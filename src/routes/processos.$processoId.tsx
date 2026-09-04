@@ -386,16 +386,41 @@ function PaginaProcesso() {
               </CardTitle>
             </CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-2">
-              {camposIdentificacao.map(([chave, rotulo]) => (
-                <div key={chave} className="space-y-1.5">
-                  <Label className="label-field">{rotulo}</Label>
-                  <Input
-                    value={campos[chave] ?? ""}
-                    onChange={(e) => set(chave, e.target.value)}
-                    placeholder="Não localizado – preencher manualmente"
-                  />
-                </div>
-              ))}
+              {camposIdentificacao.map(([chave, rotulo]) =>
+                chave === "NUMERO_RELATORIO" ? (
+                  <div key={chave} className="space-y-1.5">
+                    <Label className="label-field">{rotulo}</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        value={campos[chave] ?? ""}
+                        onChange={(e) => set(chave, e.target.value)}
+                        placeholder="Gerado automaticamente"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={ocupado || !relatorio}
+                        onClick={() => void numerar()}
+                      >
+                        Gerar número
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Numeração sequencial automática por ano. Se ficar em branco, o número é
+                      reservado ao gerar o Word.
+                    </p>
+                  </div>
+                ) : (
+                  <div key={chave} className="space-y-1.5">
+                    <Label className="label-field">{rotulo}</Label>
+                    <Input
+                      value={campos[chave] ?? ""}
+                      onChange={(e) => set(chave, e.target.value)}
+                      placeholder="Não localizado – preencher manualmente"
+                    />
+                  </div>
+                ),
+              )}
               <div className="space-y-1.5 md:col-span-2">
                 <Label className="label-field">Objeto</Label>
                 <Textarea
