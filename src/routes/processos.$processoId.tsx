@@ -182,6 +182,30 @@ function PaginaProcesso() {
     }
   }
 
+  async function numerar() {
+    if (!relatorio) return;
+    const ano = (campos["ANO_RELATORIO"] || String(new Date().getFullYear())).slice(0, 4);
+    setOcupado(true);
+    try {
+      const r = await reservarNumeroRelatorio({
+        data: { relatorioId: String(relatorio["id"]), ano },
+      });
+      setCampos((c) => ({ ...c, NUMERO_RELATORIO: r.numero, ANO_RELATORIO: r.ano }));
+      await queryClient.invalidateQueries({ queryKey: ["processo", processoId] });
+      toast.success(
+        r.novo
+          ? `Número ${r.numero}/${r.ano} reservado para este relatório.`
+          : `Este relatório já possui o número ${r.numero}/${r.ano}.`,
+      );
+    } catch (e) {
+      toast.error("Falha ao gerar a numeração", {
+        description: e instanceof Error ? e.message : String(e),
+      });
+    } finally {
+      setOcupado(false);
+    }
+  }
+
   async function salvar() {
     if (!relatorio) return;
     const id = String(relatorio["id"]);
