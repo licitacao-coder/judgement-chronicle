@@ -12,6 +12,7 @@
 - Tela Usuários: cadastro de servidores, perfis de acesso, situação ativo/inativo e matriz de permissões
 - Tela Documentos: relação dos arquivos recebidos, situação de leitura e download seguro
 - Contas reais criadas: administrador e analista, com navegação por perfil
+- Numeração sequencial automática do número do relatório (por ano)
 - Painel de Configurações: estrutura do template Word (seções, campos, origem do dado e validação de placeholders)
 
 ## Pendente

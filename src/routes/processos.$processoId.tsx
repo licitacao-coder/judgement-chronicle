@@ -24,7 +24,7 @@ import {
   rotuloConfianca,
 } from "@/lib/dominio";
 import { redigirRelato } from "@/lib/pipeline.functions";
-import { gerarRelatorioWord } from "@/lib/relatorio.functions";
+import { gerarRelatorioWord, reservarNumeroRelatorio } from "@/lib/relatorio.functions";
 import { useAuth, registrarAuditoria } from "@/lib/useAuth";
 
 export const Route = createFileRoute("/processos/$processoId")({
@@ -182,6 +182,30 @@ function PaginaProcesso() {
     }
   }
 
+  async function numerar() {
+    if (!relatorio) return;
+    const ano = (campos["ANO_RELATORIO"] || String(new Date().getFullYear())).slice(0, 4);
+    setOcupado(true);
+    try {
+      const r = await reservarNumeroRelatorio({
+        data: { relatorioId: String(relatorio["id"]), ano },
+      });
+      setCampos((c) => ({ ...c, NUMERO_RELATORIO: r.numero, ANO_RELATORIO: r.ano }));
+      await queryClient.invalidateQueries({ queryKey: ["processo", processoId] });
+      toast.success(
+        r.novo
+          ? `Número ${r.numero}/${r.ano} reservado para este relatório.`
+          : `Este relatório já possui o número ${r.numero}/${r.ano}.`,
+      );
+    } catch (e) {
+      toast.error("Falha ao gerar a numeração", {
+        description: e instanceof Error ? e.message : String(e),
+      });
+    } finally {
+      setOcupado(false);
+    }
+  }
+
   async function salvar() {
     if (!relatorio) return;
     const id = String(relatorio["id"]);
@@ -228,6 +252,7 @@ function PaginaProcesso() {
           campos: { ...campos, DOCUMENTOS: docs.join("; ") },
         },
       });
+      setCampos((c) => ({ ...c, NUMERO_RELATORIO: doc.numero, ANO_RELATORIO: doc.ano }));
       const bin = atob(doc.base64);
       const bytes = new Uint8Array(bin.length);
       for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
@@ -361,16 +386,41 @@ function PaginaProcesso() {
               </CardTitle>
             </CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-2">
-              {camposIdentificacao.map(([chave, rotulo]) => (
-                <div key={chave} className="space-y-1.5">
-                  <Label className="label-field">{rotulo}</Label>
-                  <Input
-                    value={campos[chave] ?? ""}
-                    onChange={(e) => set(chave, e.target.value)}
-                    placeholder="Não localizado – preencher manualmente"
-                  />
-                </div>
-              ))}
+              {camposIdentificacao.map(([chave, rotulo]) =>
+                chave === "NUMERO_RELATORIO" ? (
+                  <div key={chave} className="space-y-1.5">
+                    <Label className="label-field">{rotulo}</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        value={campos[chave] ?? ""}
+                        onChange={(e) => set(chave, e.target.value)}
+                        placeholder="Gerado automaticamente"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={ocupado || !relatorio}
+                        onClick={() => void numerar()}
+                      >
+                        Gerar número
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Numeração sequencial automática por ano. Se ficar em branco, o número é
+                      reservado ao gerar o Word.
+                    </p>
+                  </div>
+                ) : (
+                  <div key={chave} className="space-y-1.5">
+                    <Label className="label-field">{rotulo}</Label>
+                    <Input
+                      value={campos[chave] ?? ""}
+                      onChange={(e) => set(chave, e.target.value)}
+                      placeholder="Não localizado – preencher manualmente"
+                    />
+                  </div>
+                ),
+              )}
               <div className="space-y-1.5 md:col-span-2">
                 <Label className="label-field">Objeto</Label>
                 <Textarea
