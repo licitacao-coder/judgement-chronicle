@@ -24,7 +24,7 @@ import {
   rotuloConfianca,
 } from "@/lib/dominio";
 import { redigirRelato } from "@/lib/pipeline.functions";
-import { gerarRelatorioWord } from "@/lib/relatorio.functions";
+import { gerarRelatorioWord, reservarNumeroRelatorio } from "@/lib/relatorio.functions";
 import { useAuth, registrarAuditoria } from "@/lib/useAuth";
 
 export const Route = createFileRoute("/processos/$processoId")({
