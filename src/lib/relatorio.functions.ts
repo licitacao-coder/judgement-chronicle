@@ -132,5 +132,5 @@ export const gerarRelatorioWord = createServerFn({ method: "POST" })
       rotulo: `Versão ${versao}`,
     });
 
-    return { nome, caminho, base64 };
+    return { nome, caminho, base64, numero, ano };
   });
