@@ -754,6 +754,27 @@ export type Database = {
         }
         Relationships: []
       }
+      relatorio_numeracao: {
+        Row: {
+          ano: string
+          created_at: string
+          ultimo_numero: number
+          updated_at: string
+        }
+        Insert: {
+          ano: string
+          created_at?: string
+          ultimo_numero?: number
+          updated_at?: string
+        }
+        Update: {
+          ano?: string
+          created_at?: string
+          ultimo_numero?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       relatorio_versoes: {
         Row: {
           arquivo_pdf: string | null
@@ -930,6 +951,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      proximo_numero_relatorio: { Args: { _ano: string }; Returns: number }
     }
     Enums: {
       app_role: "ADMIN" | "ANALISTA" | "REVISOR" | "CONSULTA"
