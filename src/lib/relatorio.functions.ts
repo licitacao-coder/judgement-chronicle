@@ -118,6 +118,8 @@ export const gerarRelatorioWord = createServerFn({ method: "POST" })
         versao,
         status: "GERADO",
         dados_json: data.campos,
+        numero_relatorio: numero,
+        ano,
       })
       .eq("id", relatorio.id);
 
