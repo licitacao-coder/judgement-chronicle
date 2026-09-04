@@ -54,6 +54,9 @@ const ROTULO_CATEGORIA: Record<string, string> = {
 };
 
 function PaginaDocumentos() {
+  const queryClient = useQueryClient();
+  const { ehAdministrador } = useAuth();
+  const [excluindo, setExcluindo] = useState<string | null>(null);
   const { data: documentos, isLoading } = useQuery({
     queryKey: ["documentos"],
     queryFn: async () => {
@@ -67,6 +70,23 @@ function PaginaDocumentos() {
       return data;
     },
   });
+
+  async function remover(documentoId: string) {
+    setExcluindo(documentoId);
+    try {
+      await excluirDocumento({ data: { documentoId } });
+      await queryClient.invalidateQueries({ queryKey: ["documentos"] });
+      await queryClient.invalidateQueries({ queryKey: ["processos"] });
+      toast.success("Documento excluído.");
+    } catch (e) {
+      toast.error("Não foi possível excluir o documento", {
+        description: e instanceof Error ? e.message : String(e),
+      });
+    } finally {
+      setExcluindo(null);
+    }
+  }
+
 
   async function baixar(caminho: string | null) {
     if (!caminho) {
