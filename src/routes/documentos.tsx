@@ -1,11 +1,26 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useAuth } from "@/lib/useAuth";
+import { excluirDocumento } from "@/lib/exclusao.functions";
+
 
 export const Route = createFileRoute("/documentos")({
   head: () => ({
@@ -39,6 +54,9 @@ const ROTULO_CATEGORIA: Record<string, string> = {
 };
 
 function PaginaDocumentos() {
+  const queryClient = useQueryClient();
+  const { ehAdministrador } = useAuth();
+  const [excluindo, setExcluindo] = useState<string | null>(null);
   const { data: documentos, isLoading } = useQuery({
     queryKey: ["documentos"],
     queryFn: async () => {
@@ -52,6 +70,23 @@ function PaginaDocumentos() {
       return data;
     },
   });
+
+  async function remover(documentoId: string) {
+    setExcluindo(documentoId);
+    try {
+      await excluirDocumento({ data: { documentoId } });
+      await queryClient.invalidateQueries({ queryKey: ["documentos"] });
+      await queryClient.invalidateQueries({ queryKey: ["processos"] });
+      toast.success("Documento excluído.");
+    } catch (e) {
+      toast.error("Não foi possível excluir o documento", {
+        description: e instanceof Error ? e.message : String(e),
+      });
+    } finally {
+      setExcluindo(null);
+    }
+  }
+
 
   async function baixar(caminho: string | null) {
     if (!caminho) {
@@ -107,7 +142,33 @@ function PaginaDocumentos() {
                   <Button size="sm" variant="outline" onClick={() => void baixar(d.caminho_arquivo)}>
                     Baixar
                   </Button>
+                  {ehAdministrador ? (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button size="sm" variant="destructive" disabled={excluindo === d.id}>
+                          {excluindo === d.id ? "Excluindo..." : "Excluir"}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Excluir documento recebido?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            O arquivo “{d.nome_original}”, suas evidências, dados extraídos e os
+                            processos analisados a partir dele serão excluídos definitivamente. A
+                            operação é registrada na auditoria.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => void remover(d.id)}>
+                            Excluir definitivamente
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  ) : null}
                 </div>
+
               </div>
             ))
           )}
