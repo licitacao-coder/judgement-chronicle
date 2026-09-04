@@ -2,9 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-type Admin = Awaited<
-  typeof import("@/integrations/supabase/client.server")
->["supabaseAdmin"];
+type Admin = (typeof import("@/integrations/supabase/client.server"))["supabaseAdmin"];
+
 
 async function exigirAdministrador(context: {
   supabase: { rpc: (n: string, a: Record<string, unknown>) => Promise<{ data: unknown }> };
