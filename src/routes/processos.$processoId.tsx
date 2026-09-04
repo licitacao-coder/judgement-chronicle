@@ -252,6 +252,7 @@ function PaginaProcesso() {
           campos: { ...campos, DOCUMENTOS: docs.join("; ") },
         },
       });
+      setCampos((c) => ({ ...c, NUMERO_RELATORIO: doc.numero, ANO_RELATORIO: doc.ano }));
       const bin = atob(doc.base64);
       const bytes = new Uint8Array(bin.length);
       for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
