@@ -142,7 +142,33 @@ function PaginaDocumentos() {
                   <Button size="sm" variant="outline" onClick={() => void baixar(d.caminho_arquivo)}>
                     Baixar
                   </Button>
+                  {ehAdministrador ? (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button size="sm" variant="destructive" disabled={excluindo === d.id}>
+                          {excluindo === d.id ? "Excluindo..." : "Excluir"}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Excluir documento recebido?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            O arquivo “{d.nome_original}”, suas evidências, dados extraídos e os
+                            processos analisados a partir dele serão excluídos definitivamente. A
+                            operação é registrada na auditoria.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => void remover(d.id)}>
+                            Excluir definitivamente
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  ) : null}
                 </div>
+
               </div>
             ))
           )}
