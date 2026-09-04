@@ -69,11 +69,29 @@ export const gerarRelatorioWord = createServerFn({ method: "POST" })
       .single();
     if (!relatorio) throw new Error("Relatório não encontrado.");
 
+    const ano = data.campos["ANO_RELATORIO"] || String(new Date().getFullYear());
+
+    // Numeração sequencial automática: garante um número antes de emitir o Word.
+    let numero = data.campos["NUMERO_RELATORIO"]?.trim() || "";
+    if (!numero) {
+      numero = relatorio.numero_relatorio?.trim() || "";
+    }
+    if (!numero) {
+      const { data: proximo, error: erroRpc } = await supabase.rpc("proximo_numero_relatorio", {
+        _ano: ano,
+      });
+      if (erroRpc || proximo === null) {
+        throw new Error(
+          `Não foi possível reservar o número sequencial: ${erroRpc?.message ?? "sem retorno"}`,
+        );
+      }
+      numero = formatarNumero(Number(proximo));
+    }
+    data.campos["NUMERO_RELATORIO"] = numero;
+    data.campos["ANO_RELATORIO"] = ano;
+
     const bytes = preencherTemplate(data.campos);
     const base64 = bytesParaBase64(bytes);
-
-    const numero = data.campos["NUMERO_RELATORIO"] || "SN";
-    const ano = data.campos["ANO_RELATORIO"] || String(new Date().getFullYear());
     const nome = `Relatorio-de-Ocorrencia-${numero}-${ano}.docx`.replace(/[^\w.-]/g, "_");
     const caminho = `${userId}/${relatorio.id}/${Date.now()}-${nome}`;
 
