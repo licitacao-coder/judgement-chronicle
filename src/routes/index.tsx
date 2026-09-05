@@ -70,10 +70,28 @@ async function sha256(arquivo: File): Promise<string> {
 function Painel() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { ehAdministrador } = useAuth();
   const inputRef = useRef<HTMLInputElement>(null);
   const [categoria, setCategoria] = useState("TERMO_JULGAMENTO");
   const [etapa, setEtapa] = useState(-1);
   const [processando, setProcessando] = useState(false);
+  const [excluindo, setExcluindo] = useState<string | null>(null);
+
+  async function removerProcesso(processoId: string) {
+    setExcluindo(processoId);
+    try {
+      await excluirProcesso({ data: { processoId } });
+      await queryClient.invalidateQueries({ queryKey: ["processos"] });
+      toast.success("Processo analisado excluído.");
+    } catch (e) {
+      toast.error("Não foi possível excluir o processo", {
+        description: e instanceof Error ? e.message : String(e),
+      });
+    } finally {
+      setExcluindo(null);
+    }
+  }
+
 
   const { data: processos } = useQuery({
     queryKey: ["processos"],
