@@ -6,7 +6,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   Select,
   SelectContent,
@@ -16,6 +28,9 @@ import {
 } from "@/components/ui/select";
 import { ETAPAS_PROCESSAMENTO } from "@/lib/dominio";
 import { processarDocumento, analisarDocumento } from "@/lib/pipeline.functions";
+import { excluirProcesso } from "@/lib/exclusao.functions";
+import { useAuth } from "@/lib/useAuth";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
