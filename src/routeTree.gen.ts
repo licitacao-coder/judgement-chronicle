@@ -16,6 +16,7 @@ import { Route as DocumentosRouteImport } from './routes/documentos'
 import { Route as UsuariosRouteImport } from './routes/usuarios'
 import { Route as ProcessosProcessoIdRouteImport } from './routes/processos.$processoId'
 import { Route as RelatoriosIndexRouteImport } from './routes/relatorios.index'
+import { Route as RelatoriosRelatorioIdRouteImport } from './routes/relatorios.$relatorioId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -52,6 +53,11 @@ const RelatoriosIndexRoute = RelatoriosIndexRouteImport.update({
   path: '/relatorios/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RelatoriosRelatorioIdRoute = RelatoriosRelatorioIdRouteImport.update({
+  id: '/relatorios/$relatorioId',
+  path: '/relatorios/$relatorioId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -60,6 +66,7 @@ export interface FileRoutesByFullPath {
   '/documentos': typeof DocumentosRoute
   '/usuarios': typeof UsuariosRoute
   '/processos/$processoId': typeof ProcessosProcessoIdRoute
+  '/relatorios/$relatorioId': typeof RelatoriosRelatorioIdRoute
   '/relatorios/': typeof RelatoriosIndexRoute
 }
 export interface FileRoutesByTo {
@@ -69,6 +76,7 @@ export interface FileRoutesByTo {
   '/documentos': typeof DocumentosRoute
   '/usuarios': typeof UsuariosRoute
   '/processos/$processoId': typeof ProcessosProcessoIdRoute
+  '/relatorios/$relatorioId': typeof RelatoriosRelatorioIdRoute
   '/relatorios': typeof RelatoriosIndexRoute
 }
 export interface FileRoutesById {
@@ -79,6 +87,7 @@ export interface FileRoutesById {
   '/documentos': typeof DocumentosRoute
   '/usuarios': typeof UsuariosRoute
   '/processos/$processoId': typeof ProcessosProcessoIdRoute
+  '/relatorios/$relatorioId': typeof RelatoriosRelatorioIdRoute
   '/relatorios/': typeof RelatoriosIndexRoute
 }
 export interface FileRouteTypes {
@@ -90,6 +99,7 @@ export interface FileRouteTypes {
     | '/documentos'
     | '/usuarios'
     | '/processos/$processoId'
+    | '/relatorios/$relatorioId'
     | '/relatorios/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -99,6 +109,7 @@ export interface FileRouteTypes {
     | '/documentos'
     | '/usuarios'
     | '/processos/$processoId'
+    | '/relatorios/$relatorioId'
     | '/relatorios'
   id:
     | '__root__'
@@ -108,6 +119,7 @@ export interface FileRouteTypes {
     | '/documentos'
     | '/usuarios'
     | '/processos/$processoId'
+    | '/relatorios/$relatorioId'
     | '/relatorios/'
   fileRoutesById: FileRoutesById
 }
@@ -118,6 +130,7 @@ export interface RootRouteChildren {
   DocumentosRoute: typeof DocumentosRoute
   UsuariosRoute: typeof UsuariosRoute
   ProcessosProcessoIdRoute: typeof ProcessosProcessoIdRoute
+  RelatoriosRelatorioIdRoute: typeof RelatoriosRelatorioIdRoute
   RelatoriosIndexRoute: typeof RelatoriosIndexRoute
 }
 
@@ -172,6 +185,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RelatoriosIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/relatorios/$relatorioId': {
+      id: '/relatorios/$relatorioId'
+      path: '/relatorios/$relatorioId'
+      fullPath: '/relatorios/$relatorioId'
+      preLoaderRoute: typeof RelatoriosRelatorioIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -182,6 +202,7 @@ const rootRouteChildren: RootRouteChildren = {
   DocumentosRoute: DocumentosRoute,
   UsuariosRoute: UsuariosRoute,
   ProcessosProcessoIdRoute: ProcessosProcessoIdRoute,
+  RelatoriosRelatorioIdRoute: RelatoriosRelatorioIdRoute,
   RelatoriosIndexRoute: RelatoriosIndexRoute,
 }
 export const routeTree = rootRouteImport

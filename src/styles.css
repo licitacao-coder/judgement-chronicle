@@ -199,3 +199,17 @@
   text-align: justify;
   color: var(--color-foreground);
 }
+
+@media print {
+  header,
+  nav,
+  [data-print-hide] {
+    display: none !important;
+  }
+  .documento {
+    padding: 0 !important;
+  }
+  body {
+    background: #fff;
+  }
+}
