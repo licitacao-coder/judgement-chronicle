@@ -49,6 +49,42 @@ export const Route = createFileRoute("/processos/$processoId")({
 type Campos = Record<string, string>;
 type Registro = Record<string, string | number | null | undefined>;
 
+/** Monta "MODALIDADE nº 9/2026" sem repetir o ano nem a palavra da modalidade. */
+function montarModalidade(
+  modalidade?: string | null,
+  numeroCertame?: string | null,
+  anoCertame?: string | null,
+): string {
+  const bruto = (numeroCertame ?? "").trim();
+  const partes = bruto.split("/").filter(Boolean);
+  const numero = (partes[0] ?? "").replace(/^n[ºo°.\s]*/i, "").trim();
+  const anoNoNumero = partes.slice(1).find((x) => /^\d{4}$/.test(x.trim()))?.trim();
+  const ano = anoNoNumero ?? (anoCertame ?? "").trim();
+
+  let nome = (modalidade ?? "").trim().replace(/\s+/g, " ");
+  // remove repetição do tipo "Pregão PREGÃO"
+  const palavras = nome.split(" ");
+  const semRepeticao: string[] = [];
+  for (const palavra of palavras) {
+    const anterior = semRepeticao[semRepeticao.length - 1];
+    if (anterior && anterior.toLowerCase() === palavra.toLowerCase()) continue;
+    semRepeticao.push(palavra);
+  }
+  nome = semRepeticao.join(" ");
+  // remove número/ano já embutidos no nome da modalidade
+  nome = nome
+    .replace(/n[ºo°.]?\s*\d+\s*(\/\s*\d{4})?/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return [nome, numero ? `nº ${numero}` : "", ano ? `/${ano}` : ""]
+    .filter(Boolean)
+    .join(" ")
+    .replace(" /", "/")
+    .trim();
+}
+
+
 function PaginaProcesso() {
   const { processoId } = Route.useParams();
   const { perfil } = useAuth();
