@@ -116,13 +116,11 @@ function PaginaProcesso() {
       PROCESSO_ADMINISTRATIVO: v("PROCESSO_ADMINISTRATIVO", p["numero_processo"] as string),
       MODALIDADE_NUMERO: v(
         "MODALIDADE_NUMERO",
-        [
-          p["modalidade"],
-          p["numero_certame"] ? `nº ${p["numero_certame"]}` : null,
-          p["ano_certame"] ? `/${p["ano_certame"]}` : null,
-        ]
-          .filter(Boolean)
-          .join(" "),
+        montarModalidade(
+          p["modalidade"] as string | null,
+          p["numero_certame"] as string | null,
+          p["ano_certame"] as string | null,
+        ),
       ),
       OBJETO: v("OBJETO", p["objeto"] as string),
       PLATAFORMA: v("PLATAFORMA", p["plataforma"] as string),
@@ -130,6 +128,9 @@ function PaginaProcesso() {
         "DATA_HORARIO_SESSAO",
         [p["data_sessao"], p["horario_sessao"]].filter(Boolean).join(" às "),
       ),
+      DATA_SESSAO: v("DATA_SESSAO", p["data_sessao"] as string),
+      HORARIO_SESSAO: v("HORARIO_SESSAO", p["horario_sessao"] as string),
+
       GRUPO_LOTE: v(
         "GRUPO_LOTE",
         (licitante?.["grupo_lote"] as string) ?? (licitante?.["itens"] as string),
