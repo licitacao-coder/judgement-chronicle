@@ -289,31 +289,62 @@ function Painel() {
               ocorrencias: unknown[];
               documentos: { nome_original: string } | null;
             };
+            const numero = (item.numero_certame ?? "").split("/")[0]?.trim() ?? "";
+            const ano =
+              (item.numero_certame ?? "").split("/")[1]?.trim() || (item.ano_certame ?? "");
             return (
-              <Link
+              <div
                 key={item.id}
-                to="/processos/$processoId"
-                params={{ processoId: item.id }}
-                className="panel flex flex-wrap items-center justify-between gap-3 px-5 py-4 transition-colors hover:border-accent"
+                className="panel flex flex-wrap items-center justify-between gap-3 px-5 py-4"
               >
-                <div>
+                <Link
+                  to="/processos/$processoId"
+                  params={{ processoId: item.id }}
+                  className="min-w-0 flex-1"
+                >
                   <p className="font-medium">
                     {item.modalidade ?? "Modalidade não localizada"}
-                    {item.numero_certame ? ` nº ${item.numero_certame}` : ""}
-                    {item.ano_certame ? `/${item.ano_certame}` : ""}
+                    {numero ? ` nº ${numero}` : ""}
+                    {ano ? `/${ano}` : ""}
                   </p>
                   <p className="mt-0.5 text-xs text-muted-foreground">
                     {item.objeto
                       ? item.objeto.slice(0, 140)
                       : (item.documentos?.nome_original ?? "Objeto não localizado")}
                   </p>
-                </div>
+                </Link>
                 <div className="flex items-center gap-2 text-xs">
                   <Badge variant="secondary">{item.licitantes?.length ?? 0} licitantes</Badge>
                   <Badge>{item.ocorrencias?.length ?? 0} ocorrências</Badge>
+                  {ehAdministrador ? (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button size="sm" variant="destructive" disabled={excluindo === item.id}>
+                          {excluindo === item.id ? "Excluindo..." : "Excluir"}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Excluir processo analisado?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Serão excluídos definitivamente os licitantes, ocorrências, linha do
+                            tempo, enquadramentos e relatórios deste processo, inclusive os arquivos
+                            Word já emitidos. A operação é registrada na auditoria.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => void removerProcesso(item.id)}>
+                            Excluir definitivamente
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  ) : null}
                 </div>
-              </Link>
+              </div>
             );
+
           })}
         </div>
       </section>
