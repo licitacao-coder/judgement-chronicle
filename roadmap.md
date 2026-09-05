@@ -13,8 +13,11 @@
 - Tela Documentos: relação dos arquivos recebidos, situação de leitura e download seguro
 - Contas reais criadas: administrador e analista, com navegação por perfil
 - Numeração sequencial automática do número do relatório (por ano)
+- Exclusão de processos analisados e documentos recebidos (somente administrador)
+- Correções: permissão do analista para gerar o Word, data/horário da sessão preservados ao salvar, modalidade sem repetição do ano
 - Painel de Configurações: estrutura do template Word (seções, campos, origem do dado e validação de placeholders)
 
 ## Pendente
 - Geração opcional de PDF
+- Tela de visualização do relatório gerado (imprimir, baixar Word e versão final oficial)
 - Teste ponta a ponta com os PDFs enviados (Pregão 9/2026, Grupo 1)

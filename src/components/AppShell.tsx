@@ -48,6 +48,10 @@ export function AppShell({
               <Link to="/documentos" className="hover:underline">
                 Documentos
               </Link>
+              <Link to="/relatorios" className="hover:underline">
+                Relatórios
+              </Link>
+
               {ehAdministrador ? (
                 <>
                   <Link to="/usuarios" className="hover:underline">

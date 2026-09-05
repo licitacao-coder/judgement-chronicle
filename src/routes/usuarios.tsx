@@ -52,7 +52,7 @@ const ROTULO_PAPEL: Record<Papel, string> = {
 const PERMISSOES: { acao: string; papeis: Papel[] }[] = [
   { acao: "Enviar documentos e executar a análise", papeis: ["ADMIN", "ANALISTA"] },
   { acao: "Editar o formulário de revisão", papeis: ["ADMIN", "ANALISTA", "REVISOR"] },
-  { acao: "Confirmar checklist e gerar o Word oficial", papeis: ["ADMIN", "REVISOR"] },
+  { acao: "Confirmar checklist e gerar o Word oficial", papeis: ["ADMIN", "ANALISTA", "REVISOR"] },
   { acao: "Consultar processos, relatórios e evidências", papeis: ["ADMIN", "ANALISTA", "REVISOR", "CONSULTA"] },
   { acao: "Cadastrar usuários e definir perfis", papeis: ["ADMIN"] },
   { acao: "Configurar a estrutura do template Word", papeis: ["ADMIN"] },
