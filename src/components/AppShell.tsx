@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { useEffect } from "react";
 import { useAuth } from "@/lib/useAuth";
 import { Button } from "@/components/ui/button";
+import { AlterarSenha } from "@/components/AlterarSenha";
 
 export function AppShell({
   children,
