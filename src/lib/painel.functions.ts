@@ -97,18 +97,49 @@ function separarItens(texto: string): Bloco[] {
 /** Extrai deterministicamente o bloco "Aceito e Habilitado ... melhor lance". */
 function lerAceitoHabilitado(bloco: string) {
   const plano = bloco.replace(/\s+/g, " ");
-  const comEvidencia =
-    /Aceit[oa]s?\s+e\s+Habilitad[oa]s?[^.\n]{0,200}?para\s+([^,\n]+?),\s*CNPJ\s*([\d./-]+)[^\n]{0,200}?melhor\s+lance:?\s*R?\$?\s*([\d.,]+)\s*\(?\s*unit[^)]*\)?\s*\/?\s*R?\$?\s*([\d.,]+)\s*\(?\s*total/i;
-  const m = comEvidencia.exec(plano);
+  // Ex.: "Aceito e Habilitado por CPF ***.124.***-*9 - NOME para FORNECEDOR LTDA,
+  //       CNPJ 09.316.105/0018-77, melhor lance: R$ 1.353,2700 (unitário) / R$ 166.452,2100 (total)"
+  // Também aceita blocos com apenas o valor total.
+  const re =
+    /Aceit[oa]s?\s+e\s+Habilitad[oa]s?\b([\s\S]{0,400}?)\bCNPJ:?\s*([\d.]{2,}\/?[\d-]*)\s*,?\s*melhor\s+lance:?\s*([^\n]{0,160})/i;
+  const m = re.exec(plano);
   if (!m) return null;
+
+  const cabecalho = m[1] ?? "";
+  const cnpj = (m[2] ?? "").trim().replace(/[,.;]$/, "");
+  const lance = m[3] ?? "";
+
+  // nome do licitante: último "para <NOME>," antes do CNPJ
+  const nomeMatch = /\bpara\s+(.+?)\s*,\s*$/i.exec(cabecalho) ?? /\bpara\s+(.+)$/i.exec(cabecalho);
+  const licitante = nomeMatch?.[1]?.trim().replace(/[,.;]$/, "") ?? null;
+
+  // valores rotulados: "(unitário)" e "(total)"
+  const valores = [...lance.matchAll(/R?\$?\s*([\d.]+,\d{2,4}|\d+(?:[.,]\d+)?)\s*\(?\s*(unit\w*|total)?/gi)];
+  let unitario: number | null = null;
+  let total: number | null = null;
+  const semRotulo: number[] = [];
+  for (const v of valores) {
+    const n = numeroBr(v[1]!);
+    if (n === null) continue;
+    const rotulo = v[2]?.toLowerCase();
+    if (rotulo?.startsWith("unit")) unitario = n;
+    else if (rotulo === "total") total = n;
+    else semRotulo.push(n);
+  }
+  if (total === null && unitario === null && semRotulo.length) {
+    total = semRotulo[semRotulo.length - 1]!;
+    if (semRotulo.length > 1) unitario = semRotulo[0]!;
+  }
+
   return {
-    licitante: m[1]!.trim(),
-    cnpj: m[2]!.trim(),
-    valor_unitario: numeroBr(m[3]!),
-    valor_total: numeroBr(m[4]!),
+    licitante,
+    cnpj: cnpj || null,
+    valor_unitario: unitario,
+    valor_total: total,
     trecho: m[0]!.trim(),
   };
 }
+
 
 /** Lê a situação do item preservando a terminologia original do documento. */
 function lerSituacao(bloco: string): string | null {
