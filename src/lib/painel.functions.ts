@@ -49,16 +49,11 @@ function separarPaginas(texto: string): { pagina: number; conteudo: string }[] {
 
 type Bloco = { numero: number; pagina: number; conteudo: string };
 
-/** Evidência de aceitação/habilitação, em qualquer variação de redação. */
+/** Único critério de inclusão: item expressamente "Aceito e Habilitado". */
 export const RE_EVIDENCIA = /Aceit[oa]s?\s+e\s+Habilitad[oa]s?/i;
 
-/** Evidência complementar: bloco com licitante, CNPJ e melhor lance. */
-const RE_MELHOR_LANCE_LICITANTE =
-  /para\s+([^,\n]+?),\s*CNPJ\s*([\d./-]+)[^\n]{0,200}?melhor\s+lance:?\s*R?\$?\s*([\d.,]+)\s*\(?\s*unit[^)]*\)?\s*\/?\s*R?\$?\s*([\d.,]+)\s*\(?\s*total/i;
-
 export function temEvidenciaVencedor(conteudo: string): boolean {
-  const plano = conteudo.replace(/\s+/g, " ");
-  return RE_EVIDENCIA.test(plano) || RE_MELHOR_LANCE_LICITANTE.test(plano);
+  return RE_EVIDENCIA.test(conteudo.replace(/\s+/g, " "));
 }
 
 /** Localiza cada ocorrência de "Item X" em todas as páginas, mantendo a página de origem. */
@@ -99,15 +94,12 @@ function separarItens(texto: string): Bloco[] {
   return [...blocos.values()].sort((a, b) => a.numero - b.numero);
 }
 
-/**
- * Extrai deterministicamente o bloco do vencedor ("Aceito e Habilitado ... melhor lance"),
- * independentemente da situação registrada para o item.
- */
+/** Extrai deterministicamente o bloco "Aceito e Habilitado ... melhor lance". */
 function lerAceitoHabilitado(bloco: string) {
   const plano = bloco.replace(/\s+/g, " ");
   const comEvidencia =
     /Aceit[oa]s?\s+e\s+Habilitad[oa]s?[^.\n]{0,200}?para\s+([^,\n]+?),\s*CNPJ\s*([\d./-]+)[^\n]{0,200}?melhor\s+lance:?\s*R?\$?\s*([\d.,]+)\s*\(?\s*unit[^)]*\)?\s*\/?\s*R?\$?\s*([\d.,]+)\s*\(?\s*total/i;
-  const m = comEvidencia.exec(plano) ?? RE_MELHOR_LANCE_LICITANTE.exec(plano);
+  const m = comEvidencia.exec(plano);
   if (!m) return null;
   return {
     licitante: m[1]!.trim(),
@@ -182,7 +174,7 @@ export const extrairItensAceitos = createServerFn({ method: "POST" })
     const comEvidencia = blocos.filter((b) => temEvidenciaVencedor(b.conteudo));
     if (comEvidencia.length === 0) {
       throw new Error(
-        "Nenhum item com licitante aceito/habilitado e melhor lance foi localizado no documento.",
+        'Nenhum item com a situação "Aceito e Habilitado" foi localizado no documento.',
       );
     }
 
