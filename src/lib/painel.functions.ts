@@ -179,10 +179,10 @@ export const extrairItensAceitos = createServerFn({ method: "POST" })
     }
 
     const blocos = separarItens(doc.texto_extraido);
-    const comEvidencia = blocos.filter((b) => /Aceito\s+e\s+Habilitado/i.test(b.conteudo));
+    const comEvidencia = blocos.filter((b) => temEvidenciaVencedor(b.conteudo));
     if (comEvidencia.length === 0) {
       throw new Error(
-        'Nenhum item com a expressão "Aceito e Habilitado" foi localizado no documento.',
+        "Nenhum item com licitante aceito/habilitado e melhor lance foi localizado no documento.",
       );
     }
 
