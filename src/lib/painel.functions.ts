@@ -49,6 +49,18 @@ function separarPaginas(texto: string): { pagina: number; conteudo: string }[] {
 
 type Bloco = { numero: number; pagina: number; conteudo: string };
 
+/** Evidência de aceitação/habilitação, em qualquer variação de redação. */
+export const RE_EVIDENCIA = /Aceit[oa]s?\s+e\s+Habilitad[oa]s?/i;
+
+/** Evidência complementar: bloco com licitante, CNPJ e melhor lance. */
+const RE_MELHOR_LANCE_LICITANTE =
+  /para\s+([^,\n]+?),\s*CNPJ\s*([\d./-]+)[^\n]{0,200}?melhor\s+lance:?\s*R?\$?\s*([\d.,]+)\s*\(?\s*unit[^)]*\)?\s*\/?\s*R?\$?\s*([\d.,]+)\s*\(?\s*total/i;
+
+export function temEvidenciaVencedor(conteudo: string): boolean {
+  const plano = conteudo.replace(/\s+/g, " ");
+  return RE_EVIDENCIA.test(plano) || RE_MELHOR_LANCE_LICITANTE.test(plano);
+}
+
 /** Localiza cada ocorrência de "Item X" em todas as páginas, mantendo a página de origem. */
 function separarItens(texto: string): Bloco[] {
   const paginas = separarPaginas(texto);
@@ -68,17 +80,7 @@ function separarItens(texto: string): Bloco[] {
     marcas.push({ numero: Number(m[2]), pagina, inicio });
   }
 
-/** Evidência de aceitação/habilitação, em qualquer variação de redação. */
-export const RE_EVIDENCIA = /Aceit[oa]s?\s+e\s+Habilitad[oa]s?/i;
 
-/** Evidência complementar: bloco com licitante, CNPJ e melhor lance. */
-const RE_MELHOR_LANCE_LICITANTE =
-  /para\s+([^,\n]+?),\s*CNPJ\s*([\d./-]+)[^\n]{0,200}?melhor\s+lance:?\s*R?\$?\s*([\d.,]+)\s*\(?\s*unit[^)]*\)?\s*\/?\s*R?\$?\s*([\d.,]+)\s*\(?\s*total/i;
-
-export function temEvidenciaVencedor(conteudo: string): boolean {
-  const plano = conteudo.replace(/\s+/g, " ");
-  return RE_EVIDENCIA.test(plano) || RE_MELHOR_LANCE_LICITANTE.test(plano);
-}
 
   const blocos = new Map<number, Bloco>();
   for (let i = 0; i < marcas.length; i += 1) {
