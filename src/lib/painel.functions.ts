@@ -301,7 +301,7 @@ export const extrairItensAceitos = createServerFn({ method: "POST" })
         especificacao: nao(extra.especificacao ?? null),
         quantidade,
         unidade: nao(extra.unidade ?? null),
-        valor_unitario: unitario,
+        valor_unitario: unitarioFinal,
         valor_total: total,
         licitante: vencedor?.licitante ?? null,
         cnpj: vencedor?.cnpj ?? null,
