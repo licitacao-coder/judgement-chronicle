@@ -380,7 +380,7 @@ function PaginaPainel() {
 
     const livro = XLSX.utils.book_new();
     const aba1 = XLSX.utils.json_to_sheet(principal);
-    aba1["!autofilter"] = { ref: XLSX.utils.decode_range(aba1["!ref"] as string) };
+    aba1["!autofilter"] = { ref: (aba1["!ref"] as string) ?? "A1" };
     XLSX.utils.book_append_sheet(livro, aba1, "Itens Aceitos e Habilitados");
     XLSX.utils.book_append_sheet(
       livro,
