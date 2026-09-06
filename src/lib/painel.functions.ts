@@ -161,7 +161,12 @@ export const extrairItensAceitos = createServerFn({ method: "POST" })
     // A IA complementa somente descrição, quantidade, unidade e situação.
     const complementos = new Map<
       number,
-      { especificacao?: string; quantidade?: string; unidade?: string; situacao?: string }
+      {
+        especificacao?: string | undefined;
+        quantidade?: string | undefined;
+        unidade?: string | undefined;
+        situacao?: string | undefined;
+      }
     >();
     const lote = 6;
     for (let i = 0; i < comEvidencia.length; i += lote) {
