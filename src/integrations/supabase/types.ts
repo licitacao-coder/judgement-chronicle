@@ -635,6 +635,154 @@ export type Database = {
           },
         ]
       }
+      painel_importacoes: {
+        Row: {
+          atual: boolean
+          created_at: string
+          documento_id: string | null
+          id: string
+          identificacao_processo: string | null
+          nome_documento: string | null
+          processo_id: string | null
+          total_itens: number
+          usuario: string | null
+          valor_total: number | null
+          versao: number
+        }
+        Insert: {
+          atual?: boolean
+          created_at?: string
+          documento_id?: string | null
+          id?: string
+          identificacao_processo?: string | null
+          nome_documento?: string | null
+          processo_id?: string | null
+          total_itens?: number
+          usuario?: string | null
+          valor_total?: number | null
+          versao?: number
+        }
+        Update: {
+          atual?: boolean
+          created_at?: string
+          documento_id?: string | null
+          id?: string
+          identificacao_processo?: string | null
+          nome_documento?: string | null
+          processo_id?: string | null
+          total_itens?: number
+          usuario?: string | null
+          valor_total?: number | null
+          versao?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "painel_importacoes_documento_id_fkey"
+            columns: ["documento_id"]
+            isOneToOne: false
+            referencedRelation: "documentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "painel_importacoes_processo_id_fkey"
+            columns: ["processo_id"]
+            isOneToOne: false
+            referencedRelation: "processos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      painel_itens: {
+        Row: {
+          cnpj: string | null
+          created_at: string
+          diferenca: number | null
+          documento_id: string | null
+          especificacao: string | null
+          id: string
+          importacao_id: string
+          licitante: string | null
+          numero_item: number | null
+          observacoes: string | null
+          pagina: number | null
+          processo_id: string | null
+          quantidade: number | null
+          situacao: string | null
+          status_conferencia: string
+          trecho_origem: string | null
+          unidade: string | null
+          validacao_total: string | null
+          valor_total: number | null
+          valor_unitario: number | null
+        }
+        Insert: {
+          cnpj?: string | null
+          created_at?: string
+          diferenca?: number | null
+          documento_id?: string | null
+          especificacao?: string | null
+          id?: string
+          importacao_id: string
+          licitante?: string | null
+          numero_item?: number | null
+          observacoes?: string | null
+          pagina?: number | null
+          processo_id?: string | null
+          quantidade?: number | null
+          situacao?: string | null
+          status_conferencia?: string
+          trecho_origem?: string | null
+          unidade?: string | null
+          validacao_total?: string | null
+          valor_total?: number | null
+          valor_unitario?: number | null
+        }
+        Update: {
+          cnpj?: string | null
+          created_at?: string
+          diferenca?: number | null
+          documento_id?: string | null
+          especificacao?: string | null
+          id?: string
+          importacao_id?: string
+          licitante?: string | null
+          numero_item?: number | null
+          observacoes?: string | null
+          pagina?: number | null
+          processo_id?: string | null
+          quantidade?: number | null
+          situacao?: string | null
+          status_conferencia?: string
+          trecho_origem?: string | null
+          unidade?: string | null
+          validacao_total?: string | null
+          valor_total?: number | null
+          valor_unitario?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "painel_itens_documento_id_fkey"
+            columns: ["documento_id"]
+            isOneToOne: false
+            referencedRelation: "documentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "painel_itens_importacao_id_fkey"
+            columns: ["importacao_id"]
+            isOneToOne: false
+            referencedRelation: "painel_importacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "painel_itens_processo_id_fkey"
+            columns: ["processo_id"]
+            isOneToOne: false
+            referencedRelation: "processos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       processos: {
         Row: {
           agente: string | null
