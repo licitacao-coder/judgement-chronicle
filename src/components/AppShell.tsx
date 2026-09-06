@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { useEffect } from "react";
 import { useAuth } from "@/lib/useAuth";
 import { Button } from "@/components/ui/button";
+import { AlterarSenha } from "@/components/AlterarSenha";
 
 export function AppShell({
   children,
@@ -68,6 +69,7 @@ export function AppShell({
               <p>{perfil?.nome ?? user.email}</p>
               <p className="text-sidebar-foreground/60">{papel}</p>
             </div>
+            <AlterarSenha />
             <Button size="sm" variant="secondary" onClick={() => void sair()}>
               Sair
             </Button>
