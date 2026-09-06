@@ -249,7 +249,8 @@ export const extrairItensAceitos = createServerFn({ method: "POST" })
       }
 
       const pendencias: string[] = [];
-      if (!vencedor) pendencias.push('Bloco "Aceito e Habilitado" não interpretado integralmente.');
+      if (!vencedor)
+        pendencias.push("Bloco do licitante aceito/habilitado não interpretado integralmente.");
       if (vencedor && !validarCnpj(vencedor.cnpj))
         pendencias.push("CNPJ fora do formato 00.000.000/0000-00.");
       if (!nao(extra.especificacao ?? null)) pendencias.push("Especificação não localizada.");
