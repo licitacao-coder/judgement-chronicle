@@ -97,18 +97,49 @@ function separarItens(texto: string): Bloco[] {
 /** Extrai deterministicamente o bloco "Aceito e Habilitado ... melhor lance". */
 function lerAceitoHabilitado(bloco: string) {
   const plano = bloco.replace(/\s+/g, " ");
-  const comEvidencia =
-    /Aceit[oa]s?\s+e\s+Habilitad[oa]s?[^.\n]{0,200}?para\s+([^,\n]+?),\s*CNPJ\s*([\d./-]+)[^\n]{0,200}?melhor\s+lance:?\s*R?\$?\s*([\d.,]+)\s*\(?\s*unit[^)]*\)?\s*\/?\s*R?\$?\s*([\d.,]+)\s*\(?\s*total/i;
-  const m = comEvidencia.exec(plano);
+  // Ex.: "Aceito e Habilitado por CPF ***.124.***-*9 - NOME para FORNECEDOR LTDA,
+  //       CNPJ 09.316.105/0018-77, melhor lance: R$ 1.353,2700 (unitário) / R$ 166.452,2100 (total)"
+  // Também aceita blocos com apenas o valor total.
+  const re =
+    /Aceit[oa]s?\s+e\s+Habilitad[oa]s?\b([\s\S]{0,400}?)\bCNPJ:?\s*([\d.]{2,}\/?[\d-]*)\s*,?\s*melhor\s+lance:?\s*([^\n]{0,160})/i;
+  const m = re.exec(plano);
   if (!m) return null;
+
+  const cabecalho = m[1] ?? "";
+  const cnpj = (m[2] ?? "").trim().replace(/[,.;]$/, "");
+  const lance = m[3] ?? "";
+
+  // nome do licitante: último "para <NOME>," antes do CNPJ
+  const nomeMatch = /\bpara\s+(.+?)\s*,\s*$/i.exec(cabecalho) ?? /\bpara\s+(.+)$/i.exec(cabecalho);
+  const licitante = nomeMatch?.[1]?.trim().replace(/[,.;]$/, "") ?? null;
+
+  // valores rotulados: "(unitário)" e "(total)"
+  const valores = [...lance.matchAll(/R?\$?\s*([\d.]+,\d{2,4}|\d+(?:[.,]\d+)?)\s*\(?\s*(unit\w*|total)?/gi)];
+  let unitario: number | null = null;
+  let total: number | null = null;
+  const semRotulo: number[] = [];
+  for (const v of valores) {
+    const n = numeroBr(v[1]!);
+    if (n === null) continue;
+    const rotulo = v[2]?.toLowerCase();
+    if (rotulo?.startsWith("unit")) unitario = n;
+    else if (rotulo === "total") total = n;
+    else semRotulo.push(n);
+  }
+  if (total === null && unitario === null && semRotulo.length) {
+    total = semRotulo[semRotulo.length - 1]!;
+    if (semRotulo.length > 1) unitario = semRotulo[0]!;
+  }
+
   return {
-    licitante: m[1]!.trim(),
-    cnpj: m[2]!.trim(),
-    valor_unitario: numeroBr(m[3]!),
-    valor_total: numeroBr(m[4]!),
+    licitante,
+    cnpj: cnpj || null,
+    valor_unitario: unitario,
+    valor_total: total,
     trecho: m[0]!.trim(),
   };
 }
+
 
 /** Lê a situação do item preservando a terminologia original do documento. */
 function lerSituacao(bloco: string): string | null {
@@ -233,22 +264,31 @@ export const extrairItensAceitos = createServerFn({ method: "POST" })
       const unitario = vencedor?.valor_unitario ?? null;
       const total = vencedor?.valor_total ?? null;
 
+      const pendencias: string[] = [];
+      let unitarioFinal = unitario;
+      if (unitarioFinal === null && quantidade && total) {
+        unitarioFinal = Number((total / quantidade).toFixed(4));
+        pendencias.push("Lance unitário calculado a partir do lance total ÷ quantidade.");
+      }
+
       let validacao: string | null = null;
       let diferenca: number | null = null;
-      if (quantidade && unitario && total) {
-        diferenca = Number((quantidade * unitario - total).toFixed(2));
+      if (quantidade && unitarioFinal && total) {
+        diferenca = Number((quantidade * unitarioFinal - total).toFixed(2));
         validacao = Math.abs(diferenca) <= Math.max(0.05, total * 0.001) ? "OK" : "DIVERGENTE";
       }
 
-      const pendencias: string[] = [];
       if (!vencedor)
         pendencias.push("Bloco do licitante aceito/habilitado não interpretado integralmente.");
+      if (vencedor && !vencedor.licitante) pendencias.push("Licitante não localizado no bloco.");
       if (vencedor && !validarCnpj(vencedor.cnpj))
         pendencias.push("CNPJ fora do formato 00.000.000/0000-00.");
+      if (vencedor && total === null) pendencias.push("Melhor lance total não localizado.");
       if (!nao(extra.especificacao ?? null)) pendencias.push("Especificação não localizada.");
       if (!quantidade) pendencias.push("Quantidade não localizada.");
       if (validacao === "DIVERGENTE")
         pendencias.push("Quantidade × lance unitário difere do lance total.");
+
 
       const status: ItemPainel["status_conferencia"] = !vencedor
         ? "ERRO_EXTRACAO"
@@ -261,7 +301,7 @@ export const extrairItensAceitos = createServerFn({ method: "POST" })
         especificacao: nao(extra.especificacao ?? null),
         quantidade,
         unidade: nao(extra.unidade ?? null),
-        valor_unitario: unitario,
+        valor_unitario: unitarioFinal,
         valor_total: total,
         licitante: vencedor?.licitante ?? null,
         cnpj: vencedor?.cnpj ?? null,
