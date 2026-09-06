@@ -49,6 +49,18 @@ function separarPaginas(texto: string): { pagina: number; conteudo: string }[] {
 
 type Bloco = { numero: number; pagina: number; conteudo: string };
 
+/** Evidência de aceitação/habilitação, em qualquer variação de redação. */
+export const RE_EVIDENCIA = /Aceit[oa]s?\s+e\s+Habilitad[oa]s?/i;
+
+/** Evidência complementar: bloco com licitante, CNPJ e melhor lance. */
+const RE_MELHOR_LANCE_LICITANTE =
+  /para\s+([^,\n]+?),\s*CNPJ\s*([\d./-]+)[^\n]{0,200}?melhor\s+lance:?\s*R?\$?\s*([\d.,]+)\s*\(?\s*unit[^)]*\)?\s*\/?\s*R?\$?\s*([\d.,]+)\s*\(?\s*total/i;
+
+export function temEvidenciaVencedor(conteudo: string): boolean {
+  const plano = conteudo.replace(/\s+/g, " ");
+  return RE_EVIDENCIA.test(plano) || RE_MELHOR_LANCE_LICITANTE.test(plano);
+}
+
 /** Localiza cada ocorrência de "Item X" em todas as páginas, mantendo a página de origem. */
 function separarItens(texto: string): Bloco[] {
   const paginas = separarPaginas(texto);
@@ -68,15 +80,17 @@ function separarItens(texto: string): Bloco[] {
     marcas.push({ numero: Number(m[2]), pagina, inicio });
   }
 
+
+
   const blocos = new Map<number, Bloco>();
   for (let i = 0; i < marcas.length; i += 1) {
     const atual = marcas[i]!;
     const fim = marcas[i + 1]?.inicio ?? acumulado.length;
     const conteudo = acumulado.slice(atual.inicio, fim);
     const anterior = blocos.get(atual.numero);
-    // mantém o bloco mais completo (o que contém a evidência de aceitação)
-    const temEvidencia = /Aceito\s+e\s+Habilitado/i.test(conteudo);
-    if (!anterior || (temEvidencia && !/Aceito\s+e\s+Habilitado/i.test(anterior.conteudo))) {
+    // mantém o bloco mais completo (o que contém a evidência do vencedor)
+    const temEvidencia = temEvidenciaVencedor(conteudo);
+    if (!anterior || (temEvidencia && !temEvidenciaVencedor(anterior.conteudo))) {
       blocos.set(atual.numero, { numero: atual.numero, pagina: atual.pagina, conteudo });
     } else if (anterior && temEvidencia && conteudo.length > anterior.conteudo.length) {
       blocos.set(atual.numero, { numero: atual.numero, pagina: atual.pagina, conteudo });
@@ -85,11 +99,15 @@ function separarItens(texto: string): Bloco[] {
   return [...blocos.values()].sort((a, b) => a.numero - b.numero);
 }
 
-/** Extrai deterministicamente o bloco "Aceito e Habilitado ... melhor lance". */
+/**
+ * Extrai deterministicamente o bloco do vencedor ("Aceito e Habilitado ... melhor lance"),
+ * independentemente da situação registrada para o item.
+ */
 function lerAceitoHabilitado(bloco: string) {
-  const re =
-    /Aceito\s+e\s+Habilitado[^.\n]{0,200}?para\s+([^,\n]+?),\s*CNPJ\s*([\d./-]+)[^\n]{0,200}?melhor\s+lance:?\s*R?\$?\s*([\d.,]+)\s*\(?\s*unit[^)]*\)?\s*\/?\s*R?\$?\s*([\d.,]+)\s*\(?\s*total/i;
-  const m = re.exec(bloco.replace(/\s+/g, " "));
+  const plano = bloco.replace(/\s+/g, " ");
+  const comEvidencia =
+    /Aceit[oa]s?\s+e\s+Habilitad[oa]s?[^.\n]{0,200}?para\s+([^,\n]+?),\s*CNPJ\s*([\d./-]+)[^\n]{0,200}?melhor\s+lance:?\s*R?\$?\s*([\d.,]+)\s*\(?\s*unit[^)]*\)?\s*\/?\s*R?\$?\s*([\d.,]+)\s*\(?\s*total/i;
+  const m = comEvidencia.exec(plano) ?? RE_MELHOR_LANCE_LICITANTE.exec(plano);
   if (!m) return null;
   return {
     licitante: m[1]!.trim(),
@@ -100,19 +118,29 @@ function lerAceitoHabilitado(bloco: string) {
   };
 }
 
+/** Lê a situação do item preservando a terminologia original do documento. */
 function lerSituacao(bloco: string): string | null {
+  const plano = bloco.replace(/\s+/g, " ");
+  const rotulo = /Situa[çc][ãa]o(?:\s+do\s+item)?\s*:?\s*([^.;|\n]{3,80})/i.exec(plano);
+  if (rotulo?.[1]) return rotulo[1].trim();
+
   const padroes = [
     /Aberto\s+para\s+recursos/i,
     /Aguardando\s+adjudica[çc][ãa]o/i,
+    /Aguardando\s+homologa[çc][ãa]o/i,
     /Adjudicado\s+e\s+Homologado/i,
     /Adjudicado/i,
     /Homologado/i,
     /Encerrado/i,
-    /Aceito\s+e\s+Habilitado/i,
+    /Cancelado[^.;\n]{0,40}/i,
+    /Deserto/i,
+    /Fracassado/i,
+    /Em\s+julgamento/i,
+    /Aceit[oa]s?\s+e\s+Habilitad[oa]s?/i,
   ];
   for (const p of padroes) {
-    const m = p.exec(bloco);
-    if (m) return m[0].replace(/\s+/g, " ");
+    const m = p.exec(plano);
+    if (m) return m[0].replace(/\s+/g, " ").trim();
   }
   return null;
 }
@@ -151,10 +179,10 @@ export const extrairItensAceitos = createServerFn({ method: "POST" })
     }
 
     const blocos = separarItens(doc.texto_extraido);
-    const comEvidencia = blocos.filter((b) => /Aceito\s+e\s+Habilitado/i.test(b.conteudo));
+    const comEvidencia = blocos.filter((b) => temEvidenciaVencedor(b.conteudo));
     if (comEvidencia.length === 0) {
       throw new Error(
-        'Nenhum item com a expressão "Aceito e Habilitado" foi localizado no documento.',
+        "Nenhum item com licitante aceito/habilitado e melhor lance foi localizado no documento.",
       );
     }
 
@@ -221,7 +249,8 @@ export const extrairItensAceitos = createServerFn({ method: "POST" })
       }
 
       const pendencias: string[] = [];
-      if (!vencedor) pendencias.push('Bloco "Aceito e Habilitado" não interpretado integralmente.');
+      if (!vencedor)
+        pendencias.push("Bloco do licitante aceito/habilitado não interpretado integralmente.");
       if (vencedor && !validarCnpj(vencedor.cnpj))
         pendencias.push("CNPJ fora do formato 00.000.000/0000-00.");
       if (!nao(extra.especificacao ?? null)) pendencias.push("Especificação não localizada.");
