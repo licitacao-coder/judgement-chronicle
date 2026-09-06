@@ -17,7 +17,10 @@
 - Correções: permissão do analista para gerar o Word, data/horário da sessão preservados ao salvar, modalidade sem repetição do ano
 - Painel de Configurações: estrutura do template Word (seções, campos, origem do dado e validação de placeholders)
 
+## Concluído recentemente
+- Tela de visualização do relatório gerado, com imprimir, baixar Word e registro da versão final oficial
+- Modelo oficial substituído pelo novo documento (papel timbrado de Marabá, 7 seções, campos automáticos)
+
 ## Pendente
 - Geração opcional de PDF
-- Tela de visualização do relatório gerado (imprimir, baixar Word e versão final oficial)
 - Teste ponta a ponta com os PDFs enviados (Pregão 9/2026, Grupo 1)
