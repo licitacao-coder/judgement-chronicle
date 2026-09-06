@@ -174,7 +174,7 @@ export const extrairItensAceitos = createServerFn({ method: "POST" })
     const comEvidencia = blocos.filter((b) => temEvidenciaVencedor(b.conteudo));
     if (comEvidencia.length === 0) {
       throw new Error(
-        "Nenhum item com licitante aceito/habilitado e melhor lance foi localizado no documento.",
+        'Nenhum item com a situação "Aceito e Habilitado" foi localizado no documento.',
       );
     }
 
