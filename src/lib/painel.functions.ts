@@ -1,0 +1,357 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { chamarIA, extrairJson } from "./ia.server";
+import { REGRAS_GERAIS } from "./prompts.server";
+
+export type ItemPainel = {
+  numero_item: number | null;
+  especificacao: string | null;
+  quantidade: number | null;
+  unidade: string | null;
+  valor_unitario: number | null;
+  valor_total: number | null;
+  licitante: string | null;
+  cnpj: string | null;
+  situacao: string | null;
+  pagina: number | null;
+  trecho_origem: string | null;
+  status_conferencia: "EXTRAIDO_VALIDADO" | "NECESSITA_CONFERENCIA" | "ERRO_EXTRACAO";
+  validacao_total: string | null;
+  diferenca: number | null;
+  observacoes: string | null;
+};
+
+const numeroBr = (texto: string | null | undefined): number | null => {
+  if (!texto) return null;
+  const limpo = texto.replace(/\s/g, "").replace(/R\$/i, "");
+  const semMilhar = limpo.replace(/\.(?=\d{3}(\D|$))/g, "").replace(",", ".");
+  const n = Number(semMilhar);
+  return Number.isFinite(n) ? n : null;
+};
+
+const CNPJ_RE = /\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}/;
+
+function validarCnpj(valor: string | null): boolean {
+  return !!valor && CNPJ_RE.test(valor);
+}
+
+/** Divide o texto em páginas usando os marcadores gravados na leitura do PDF. */
+function separarPaginas(texto: string): { pagina: number; conteudo: string }[] {
+  const partes = texto.split(/---\s*P[áa]gina\s+(\d+)\s*---/gi);
+  if (partes.length < 3) return [{ pagina: 1, conteudo: texto }];
+  const paginas: { pagina: number; conteudo: string }[] = [];
+  for (let i = 1; i < partes.length; i += 2) {
+    paginas.push({ pagina: Number(partes[i]), conteudo: partes[i + 1] ?? "" });
+  }
+  return paginas;
+}
+
+type Bloco = { numero: number; pagina: number; conteudo: string };
+
+/** Localiza cada ocorrência de "Item X" em todas as páginas, mantendo a página de origem. */
+function separarItens(texto: string): Bloco[] {
+  const paginas = separarPaginas(texto);
+  const marcas: { numero: number; pagina: number; inicio: number }[] = [];
+  let acumulado = "";
+  const mapa: { fim: number; pagina: number }[] = [];
+  for (const p of paginas) {
+    acumulado += `\n${p.conteudo}`;
+    mapa.push({ fim: acumulado.length, pagina: p.pagina });
+  }
+
+  const re = /(^|\n)\s*Item\s+(\d{1,4})\b/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(acumulado))) {
+    const inicio = m.index;
+    const pagina = mapa.find((x) => inicio < x.fim)?.pagina ?? 1;
+    marcas.push({ numero: Number(m[2]), pagina, inicio });
+  }
+
+  const blocos = new Map<number, Bloco>();
+  for (let i = 0; i < marcas.length; i += 1) {
+    const atual = marcas[i]!;
+    const fim = marcas[i + 1]?.inicio ?? acumulado.length;
+    const conteudo = acumulado.slice(atual.inicio, fim);
+    const anterior = blocos.get(atual.numero);
+    // mantém o bloco mais completo (o que contém a evidência de aceitação)
+    const temEvidencia = /Aceito\s+e\s+Habilitado/i.test(conteudo);
+    if (!anterior || (temEvidencia && !/Aceito\s+e\s+Habilitado/i.test(anterior.conteudo))) {
+      blocos.set(atual.numero, { numero: atual.numero, pagina: atual.pagina, conteudo });
+    } else if (anterior && temEvidencia && conteudo.length > anterior.conteudo.length) {
+      blocos.set(atual.numero, { numero: atual.numero, pagina: atual.pagina, conteudo });
+    }
+  }
+  return [...blocos.values()].sort((a, b) => a.numero - b.numero);
+}
+
+/** Extrai deterministicamente o bloco "Aceito e Habilitado ... melhor lance". */
+function lerAceitoHabilitado(bloco: string) {
+  const re =
+    /Aceito\s+e\s+Habilitado[^.\n]{0,200}?para\s+([^,\n]+?),\s*CNPJ\s*([\d./-]+)[^\n]{0,200}?melhor\s+lance:?\s*R?\$?\s*([\d.,]+)\s*\(?\s*unit[^)]*\)?\s*\/?\s*R?\$?\s*([\d.,]+)\s*\(?\s*total/i;
+  const m = re.exec(bloco.replace(/\s+/g, " "));
+  if (!m) return null;
+  return {
+    licitante: m[1]!.trim(),
+    cnpj: m[2]!.trim(),
+    valor_unitario: numeroBr(m[3]!),
+    valor_total: numeroBr(m[4]!),
+    trecho: m[0]!.trim(),
+  };
+}
+
+function lerSituacao(bloco: string): string | null {
+  const padroes = [
+    /Aberto\s+para\s+recursos/i,
+    /Aguardando\s+adjudica[çc][ãa]o/i,
+    /Adjudicado\s+e\s+Homologado/i,
+    /Adjudicado/i,
+    /Homologado/i,
+    /Encerrado/i,
+    /Aceito\s+e\s+Habilitado/i,
+  ];
+  for (const p of padroes) {
+    const m = p.exec(bloco);
+    if (m) return m[0].replace(/\s+/g, " ");
+  }
+  return null;
+}
+
+const promptItens = (blocos: Bloco[]) => `${REGRAS_GERAIS}
+
+Você recebe trechos de um TERMO DE JULGAMENTO, um por item. Para CADA item, devolva a
+descrição/especificação fiel (preservando capacidade, tensão, frequência, garantia, marca/modelo e
+demais características apresentadas), a quantidade, a unidade de fornecimento e a situação do item
+exatamente como aparece no documento. Não invente dados: use "NAO_LOCALIZADO".
+
+Devolva SOMENTE JSON:
+{"itens":[{"numero_item":0,"especificacao":"","quantidade":"","unidade":"","situacao":""}]}
+
+${blocos
+  .map(
+    (b) => `=== ITEM ${b.numero} (página ${b.pagina}) ===\n${b.conteudo.slice(0, 6000)}`,
+  )
+  .join("\n\n")}`;
+
+export const extrairItensAceitos = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ documentoId: z.string().uuid() }).parse(data))
+  .handler(async ({ data, context }) => {
+    const supabase = context.supabase;
+    const { data: doc } = await supabase
+      .from("documentos")
+      .select("id, nome_original, texto_extraido, quantidade_paginas")
+      .eq("id", data.documentoId)
+      .single();
+    if (!doc) throw new Error("Documento não encontrado.");
+    if (!doc.texto_extraido || doc.texto_extraido.replace(/\s/g, "").length < 200) {
+      throw new Error(
+        "O documento ainda não possui texto pesquisável. Envie o Termo de Julgamento em PDF com texto (não digitalizado como imagem).",
+      );
+    }
+
+    const blocos = separarItens(doc.texto_extraido);
+    const comEvidencia = blocos.filter((b) => /Aceito\s+e\s+Habilitado/i.test(b.conteudo));
+    if (comEvidencia.length === 0) {
+      throw new Error(
+        'Nenhum item com a expressão "Aceito e Habilitado" foi localizado no documento.',
+      );
+    }
+
+    // A IA complementa somente descrição, quantidade, unidade e situação.
+    const complementos = new Map<
+      number,
+      {
+        especificacao?: string | undefined;
+        quantidade?: string | undefined;
+        unidade?: string | undefined;
+        situacao?: string | undefined;
+      }
+    >();
+    const lote = 6;
+    for (let i = 0; i < comEvidencia.length; i += lote) {
+      const parte = comEvidencia.slice(i, i + lote);
+      try {
+        const resposta = await chamarIA(
+          [
+            { role: "system", content: "Responda exclusivamente com JSON válido." },
+            { role: "user", content: promptItens(parte) },
+          ],
+          { json: true },
+        );
+        const json = extrairJson<{
+          itens?: {
+            numero_item?: number | string;
+            especificacao?: string;
+            quantidade?: string;
+            unidade?: string;
+            situacao?: string;
+          }[];
+        }>(resposta);
+        for (const it of json.itens ?? []) {
+          const numero = Number(it.numero_item);
+          if (!Number.isFinite(numero)) continue;
+          complementos.set(numero, {
+            especificacao: it.especificacao,
+            quantidade: it.quantidade,
+            unidade: it.unidade,
+            situacao: it.situacao,
+          });
+        }
+      } catch (e) {
+        console.error("[painel] falha na leitura de um lote de itens", e);
+      }
+    }
+
+    const nao = (v?: string | null) =>
+      !v || v.trim() === "" || v.trim().toUpperCase() === "NAO_LOCALIZADO" ? null : v.trim();
+
+    const itens: ItemPainel[] = comEvidencia.map((bloco) => {
+      const vencedor = lerAceitoHabilitado(bloco.conteudo);
+      const extra = complementos.get(bloco.numero) ?? {};
+      const quantidade = numeroBr(nao(extra.quantidade ?? null));
+      const unitario = vencedor?.valor_unitario ?? null;
+      const total = vencedor?.valor_total ?? null;
+
+      let validacao: string | null = null;
+      let diferenca: number | null = null;
+      if (quantidade && unitario && total) {
+        diferenca = Number((quantidade * unitario - total).toFixed(2));
+        validacao = Math.abs(diferenca) <= Math.max(0.05, total * 0.001) ? "OK" : "DIVERGENTE";
+      }
+
+      const pendencias: string[] = [];
+      if (!vencedor) pendencias.push('Bloco "Aceito e Habilitado" não interpretado integralmente.');
+      if (vencedor && !validarCnpj(vencedor.cnpj))
+        pendencias.push("CNPJ fora do formato 00.000.000/0000-00.");
+      if (!nao(extra.especificacao ?? null)) pendencias.push("Especificação não localizada.");
+      if (!quantidade) pendencias.push("Quantidade não localizada.");
+      if (validacao === "DIVERGENTE")
+        pendencias.push("Quantidade × lance unitário difere do lance total.");
+
+      const status: ItemPainel["status_conferencia"] = !vencedor
+        ? "ERRO_EXTRACAO"
+        : pendencias.length
+          ? "NECESSITA_CONFERENCIA"
+          : "EXTRAIDO_VALIDADO";
+
+      return {
+        numero_item: bloco.numero,
+        especificacao: nao(extra.especificacao ?? null),
+        quantidade,
+        unidade: nao(extra.unidade ?? null),
+        valor_unitario: unitario,
+        valor_total: total,
+        licitante: vencedor?.licitante ?? null,
+        cnpj: vencedor?.cnpj ?? null,
+        situacao: nao(extra.situacao ?? null) ?? lerSituacao(bloco.conteudo),
+        pagina: bloco.pagina,
+        trecho_origem: vencedor?.trecho ?? bloco.conteudo.slice(0, 1200).trim(),
+        status_conferencia: status,
+        validacao_total: validacao,
+        diferenca,
+        observacoes: pendencias.join(" ") || null,
+      };
+    });
+
+    return {
+      documentoId: doc.id,
+      nomeDocumento: doc.nome_original,
+      totalBlocos: blocos.length,
+      itens,
+    };
+  });
+
+export const salvarImportacaoPainel = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        documentoId: z.string().uuid(),
+        processoId: z.string().uuid().nullable().optional(),
+        identificacaoProcesso: z.string().nullable().optional(),
+        itens: z.array(z.record(z.string(), z.unknown())),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const supabase = context.supabase;
+    if (data.itens.length === 0) throw new Error("Nenhum item para gravar.");
+
+    const { data: anteriores } = await supabase
+      .from("painel_importacoes")
+      .select("versao")
+      .eq("documento_id", data.documentoId)
+      .order("versao", { ascending: false })
+      .limit(1);
+    const versao = (anteriores?.[0]?.versao ?? 0) + 1;
+
+    if (data.processoId) {
+      await supabase
+        .from("painel_importacoes")
+        .update({ atual: false })
+        .eq("processo_id", data.processoId);
+    }
+
+    const { data: doc } = await supabase
+      .from("documentos")
+      .select("nome_original")
+      .eq("id", data.documentoId)
+      .single();
+
+    const valorTotal = data.itens.reduce(
+      (soma, i) => soma + (typeof i["valor_total"] === "number" ? (i["valor_total"] as number) : 0),
+      0,
+    );
+
+    const { data: importacao, error } = await supabase
+      .from("painel_importacoes")
+      .insert({
+        processo_id: data.processoId ?? null,
+        documento_id: data.documentoId,
+        nome_documento: doc?.nome_original ?? null,
+        identificacao_processo: data.identificacaoProcesso ?? null,
+        versao,
+        total_itens: data.itens.length,
+        valor_total: valorTotal,
+        atual: true,
+        usuario: context.userId,
+      })
+      .select()
+      .single();
+    if (error || !importacao) throw new Error(error?.message ?? "Falha ao registrar a importação.");
+
+    const registros = data.itens.map((i) => ({
+      importacao_id: importacao.id,
+      processo_id: data.processoId ?? null,
+      documento_id: data.documentoId,
+      numero_item: (i["numero_item"] as number) ?? null,
+      especificacao: (i["especificacao"] as string) ?? null,
+      quantidade: (i["quantidade"] as number) ?? null,
+      unidade: (i["unidade"] as string) ?? null,
+      valor_unitario: (i["valor_unitario"] as number) ?? null,
+      valor_total: (i["valor_total"] as number) ?? null,
+      licitante: (i["licitante"] as string) ?? null,
+      cnpj: (i["cnpj"] as string) ?? null,
+      situacao: (i["situacao"] as string) ?? null,
+      pagina: (i["pagina"] as number) ?? null,
+      status_conferencia: (i["status_conferencia"] as string) ?? "NECESSITA_CONFERENCIA",
+      validacao_total: (i["validacao_total"] as string) ?? null,
+      diferenca: (i["diferenca"] as number) ?? null,
+      trecho_origem: (i["trecho_origem"] as string) ?? null,
+      observacoes: (i["observacoes"] as string) ?? null,
+    }));
+
+    const { error: erroItens } = await supabase.from("painel_itens").insert(registros);
+    if (erroItens) throw new Error(erroItens.message);
+
+    await supabase.from("auditoria").insert({
+      usuario_id: context.userId,
+      entidade: "painel_itens",
+      entidade_id: importacao.id,
+      acao: "IMPORTACAO_ITENS_ACEITOS",
+      valor_novo: `${data.itens.length} item(ns), versão ${versao}`,
+    });
+
+    return { importacaoId: importacao.id, versao, total: data.itens.length };
+  });

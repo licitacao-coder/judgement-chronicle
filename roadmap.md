@@ -21,6 +21,9 @@
 - Tela de visualização do relatório gerado, com imprimir, baixar Word e registro da versão final oficial
 - Modelo oficial substituído pelo novo documento (papel timbrado de Marabá, 7 seções, campos automáticos)
 
+## Concluído recentemente
+- Painel de Itens Aceitos e Habilitados: extração do Termo de Julgamento por item, prévia, filtros, resumos, histórico e exportação Excel/CSV
+
 ## Pendente
 - Geração opcional de PDF
 - Teste ponta a ponta com os PDFs enviados (Pregão 9/2026, Grupo 1)

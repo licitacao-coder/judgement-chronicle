@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as DocumentosRouteImport } from './routes/documentos'
+import { Route as PainelRouteImport } from './routes/painel'
 import { Route as UsuariosRouteImport } from './routes/usuarios'
 import { Route as ProcessosProcessoIdRouteImport } from './routes/processos.$processoId'
 import { Route as RelatoriosIndexRouteImport } from './routes/relatorios.index'
@@ -36,6 +37,11 @@ const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
 const DocumentosRoute = DocumentosRouteImport.update({
   id: '/documentos',
   path: '/documentos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PainelRoute = PainelRouteImport.update({
+  id: '/painel',
+  path: '/painel',
   getParentRoute: () => rootRouteImport,
 } as any)
 const UsuariosRoute = UsuariosRouteImport.update({
@@ -64,6 +70,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/documentos': typeof DocumentosRoute
+  '/painel': typeof PainelRoute
   '/usuarios': typeof UsuariosRoute
   '/processos/$processoId': typeof ProcessosProcessoIdRoute
   '/relatorios/$relatorioId': typeof RelatoriosRelatorioIdRoute
@@ -74,6 +81,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/documentos': typeof DocumentosRoute
+  '/painel': typeof PainelRoute
   '/usuarios': typeof UsuariosRoute
   '/processos/$processoId': typeof ProcessosProcessoIdRoute
   '/relatorios/$relatorioId': typeof RelatoriosRelatorioIdRoute
@@ -85,6 +93,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/documentos': typeof DocumentosRoute
+  '/painel': typeof PainelRoute
   '/usuarios': typeof UsuariosRoute
   '/processos/$processoId': typeof ProcessosProcessoIdRoute
   '/relatorios/$relatorioId': typeof RelatoriosRelatorioIdRoute
@@ -97,6 +106,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/configuracoes'
     | '/documentos'
+    | '/painel'
     | '/usuarios'
     | '/processos/$processoId'
     | '/relatorios/$relatorioId'
@@ -107,6 +117,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/configuracoes'
     | '/documentos'
+    | '/painel'
     | '/usuarios'
     | '/processos/$processoId'
     | '/relatorios/$relatorioId'
@@ -117,6 +128,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/configuracoes'
     | '/documentos'
+    | '/painel'
     | '/usuarios'
     | '/processos/$processoId'
     | '/relatorios/$relatorioId'
@@ -128,6 +140,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ConfiguracoesRoute: typeof ConfiguracoesRoute
   DocumentosRoute: typeof DocumentosRoute
+  PainelRoute: typeof PainelRoute
   UsuariosRoute: typeof UsuariosRoute
   ProcessosProcessoIdRoute: typeof ProcessosProcessoIdRoute
   RelatoriosRelatorioIdRoute: typeof RelatoriosRelatorioIdRoute
@@ -162,6 +175,13 @@ declare module '@tanstack/react-router' {
       path: '/documentos'
       fullPath: '/documentos'
       preLoaderRoute: typeof DocumentosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/painel': {
+      id: '/painel'
+      path: '/painel'
+      fullPath: '/painel'
+      preLoaderRoute: typeof PainelRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/usuarios': {
@@ -200,6 +220,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ConfiguracoesRoute: ConfiguracoesRoute,
   DocumentosRoute: DocumentosRoute,
+  PainelRoute: PainelRoute,
   UsuariosRoute: UsuariosRoute,
   ProcessosProcessoIdRoute: ProcessosProcessoIdRoute,
   RelatoriosRelatorioIdRoute: RelatoriosRelatorioIdRoute,

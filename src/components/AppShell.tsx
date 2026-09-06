@@ -52,6 +52,9 @@ export function AppShell({
               <Link to="/relatorios" className="hover:underline">
                 Relatórios
               </Link>
+              <Link to="/painel" className="hover:underline">
+                Itens aceitos
+              </Link>
 
               {ehAdministrador ? (
                 <>
