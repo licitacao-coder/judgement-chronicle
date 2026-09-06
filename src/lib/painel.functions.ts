@@ -94,15 +94,12 @@ function separarItens(texto: string): Bloco[] {
   return [...blocos.values()].sort((a, b) => a.numero - b.numero);
 }
 
-/**
- * Extrai deterministicamente o bloco do vencedor ("Aceito e Habilitado ... melhor lance"),
- * independentemente da situação registrada para o item.
- */
+/** Extrai deterministicamente o bloco "Aceito e Habilitado ... melhor lance". */
 function lerAceitoHabilitado(bloco: string) {
   const plano = bloco.replace(/\s+/g, " ");
   const comEvidencia =
     /Aceit[oa]s?\s+e\s+Habilitad[oa]s?[^.\n]{0,200}?para\s+([^,\n]+?),\s*CNPJ\s*([\d./-]+)[^\n]{0,200}?melhor\s+lance:?\s*R?\$?\s*([\d.,]+)\s*\(?\s*unit[^)]*\)?\s*\/?\s*R?\$?\s*([\d.,]+)\s*\(?\s*total/i;
-  const m = comEvidencia.exec(plano) ?? RE_MELHOR_LANCE_LICITANTE.exec(plano);
+  const m = comEvidencia.exec(plano);
   if (!m) return null;
   return {
     licitante: m[1]!.trim(),
