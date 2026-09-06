@@ -264,22 +264,31 @@ export const extrairItensAceitos = createServerFn({ method: "POST" })
       const unitario = vencedor?.valor_unitario ?? null;
       const total = vencedor?.valor_total ?? null;
 
+      const pendencias: string[] = [];
+      let unitarioFinal = unitario;
+      if (unitarioFinal === null && quantidade && total) {
+        unitarioFinal = Number((total / quantidade).toFixed(4));
+        pendencias.push("Lance unitário calculado a partir do lance total ÷ quantidade.");
+      }
+
       let validacao: string | null = null;
       let diferenca: number | null = null;
-      if (quantidade && unitario && total) {
-        diferenca = Number((quantidade * unitario - total).toFixed(2));
+      if (quantidade && unitarioFinal && total) {
+        diferenca = Number((quantidade * unitarioFinal - total).toFixed(2));
         validacao = Math.abs(diferenca) <= Math.max(0.05, total * 0.001) ? "OK" : "DIVERGENTE";
       }
 
-      const pendencias: string[] = [];
       if (!vencedor)
         pendencias.push("Bloco do licitante aceito/habilitado não interpretado integralmente.");
+      if (vencedor && !vencedor.licitante) pendencias.push("Licitante não localizado no bloco.");
       if (vencedor && !validarCnpj(vencedor.cnpj))
         pendencias.push("CNPJ fora do formato 00.000.000/0000-00.");
+      if (vencedor && total === null) pendencias.push("Melhor lance total não localizado.");
       if (!nao(extra.especificacao ?? null)) pendencias.push("Especificação não localizada.");
       if (!quantidade) pendencias.push("Quantidade não localizada.");
       if (validacao === "DIVERGENTE")
         pendencias.push("Quantidade × lance unitário difere do lance total.");
+
 
       const status: ItemPainel["status_conferencia"] = !vencedor
         ? "ERRO_EXTRACAO"
