@@ -113,29 +113,17 @@ function lerAceitoHabilitado(bloco: string) {
 
   const cabecalho = m[1] ?? "";
   const cnpj = (m[2] ?? "").trim().replace(/[,.;]$/, "");
-  const lance = m[3] ?? "";
+  // encerra o trecho do lance antes do início da lista de propostas dos demais licitantes
+  const lance = (m[3] ?? "").split(
+    /\bPropostas\b|\bFornecedor\b|\bBenef[íi]cio\b|\bValor\s+proposta\b|\bValor\s+negociado\b/i,
+  )[0]!;
 
   // nome do licitante: último "para <NOME>," antes do CNPJ
   const nomeMatch = /\bpara\s+(.+?)\s*,\s*$/i.exec(cabecalho) ?? /\bpara\s+(.+)$/i.exec(cabecalho);
   const licitante = nomeMatch?.[1]?.trim().replace(/[,.;]$/, "") ?? null;
 
   // valores rotulados: "(unitário)" e "(total)"
-  const valores = [...lance.matchAll(/R?\$?\s*([\d.]+,\d{2,4}|\d+(?:[.,]\d+)?)\s*\(?\s*(unit\w*|total)?/gi)];
-  let unitario: number | null = null;
-  let total: number | null = null;
-  const semRotulo: number[] = [];
-  for (const v of valores) {
-    const n = numeroBr(v[1]!);
-    if (n === null) continue;
-    const rotulo = v[2]?.toLowerCase();
-    if (rotulo?.startsWith("unit")) unitario = n;
-    else if (rotulo === "total") total = n;
-    else semRotulo.push(n);
-  }
-  if (total === null && unitario === null && semRotulo.length) {
-    total = semRotulo[semRotulo.length - 1]!;
-    if (semRotulo.length > 1) unitario = semRotulo[0]!;
-  }
+  const { unitario, total } = lerRotulados(lance);
 
   return {
     licitante,
