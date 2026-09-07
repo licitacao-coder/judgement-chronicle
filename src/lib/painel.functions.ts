@@ -327,21 +327,50 @@ export const extrairItensAceitos = createServerFn({ method: "POST" })
       const vencedor = lerAceitoHabilitado(bloco.conteudo);
       const extra = complementos.get(bloco.numero) ?? {};
       const quantidade = numeroBr(nao(extra.quantidade ?? null));
-      const unitario = vencedor?.valor_unitario ?? null;
-      const total = vencedor?.valor_total ?? null;
+      const negociado = lerValorNegociado(bloco.conteudo, vencedor?.cnpj ?? null);
+      const referencia = lerValorReferencia(bloco.conteudo);
 
       const pendencias: string[] = [];
+
+      // O valor negociado prevalece sobre o melhor lance quando informado no bloco.
+      const usaNegociado = negociado.unitario !== null || negociado.total !== null;
+      const origem: ItemPainel["origem_valor"] = usaNegociado
+        ? "VALOR_NEGOCIADO"
+        : vencedor
+          ? "MELHOR_LANCE"
+          : null;
+      if (usaNegociado)
+        pendencias.push("Valor negociado informado no documento prevaleceu sobre o melhor lance.");
+
+      const unitario = usaNegociado ? negociado.unitario : (vencedor?.valor_unitario ?? null);
+      const total = usaNegociado ? negociado.total : (vencedor?.valor_total ?? null);
+
       let unitarioFinal = unitario;
-      if (unitarioFinal === null && quantidade && total) {
-        unitarioFinal = Number((total / quantidade).toFixed(4));
-        pendencias.push("Lance unitário calculado a partir do lance total ÷ quantidade.");
+      let totalFinal = total;
+      if (unitarioFinal === null && quantidade && totalFinal) {
+        unitarioFinal = Number((totalFinal / quantidade).toFixed(4));
+        pendencias.push("Valor unitário calculado a partir do valor total ÷ quantidade.");
+      }
+      if (totalFinal === null && quantidade && unitarioFinal) {
+        totalFinal = Number((unitarioFinal * quantidade).toFixed(2));
+        pendencias.push("Valor total calculado a partir do valor unitário × quantidade.");
       }
 
       let validacao: string | null = null;
       let diferenca: number | null = null;
-      if (quantidade && unitarioFinal && total) {
-        diferenca = Number((quantidade * unitarioFinal - total).toFixed(2));
-        validacao = Math.abs(diferenca) <= Math.max(0.05, total * 0.001) ? "OK" : "DIVERGENTE";
+      if (quantidade && unitarioFinal && totalFinal) {
+        diferenca = Number((quantidade * unitarioFinal - totalFinal).toFixed(2));
+        validacao = Math.abs(diferenca) <= Math.max(0.05, totalFinal * 0.001) ? "OK" : "DIVERGENTE";
+      }
+
+      // Percentual de diferença entre o valor considerado e o valor de referência.
+      let percentual: number | null = null;
+      if (referencia.total && totalFinal) {
+        percentual = Number((((totalFinal - referencia.total) / referencia.total) * 100).toFixed(2));
+      } else if (referencia.unitario && unitarioFinal) {
+        percentual = Number(
+          (((unitarioFinal - referencia.unitario) / referencia.unitario) * 100).toFixed(2),
+        );
       }
 
       if (!vencedor)
@@ -349,12 +378,12 @@ export const extrairItensAceitos = createServerFn({ method: "POST" })
       if (vencedor && !vencedor.licitante) pendencias.push("Licitante não localizado no bloco.");
       if (vencedor && !validarCnpj(vencedor.cnpj))
         pendencias.push("CNPJ fora do formato 00.000.000/0000-00.");
-      if (vencedor && total === null) pendencias.push("Melhor lance total não localizado.");
+      if (vencedor && totalFinal === null) pendencias.push("Valor total não localizado.");
       if (!nao(extra.especificacao ?? null)) pendencias.push("Especificação não localizada.");
       if (!quantidade) pendencias.push("Quantidade não localizada.");
+      if (percentual === null) pendencias.push("Valor de referência não localizado no item.");
       if (validacao === "DIVERGENTE")
-        pendencias.push("Quantidade × lance unitário difere do lance total.");
-
+        pendencias.push("Quantidade × valor unitário difere do valor total.");
 
       const status: ItemPainel["status_conferencia"] = !vencedor
         ? "ERRO_EXTRACAO"
@@ -368,7 +397,13 @@ export const extrairItensAceitos = createServerFn({ method: "POST" })
         quantidade,
         unidade: nao(extra.unidade ?? null),
         valor_unitario: unitarioFinal,
-        valor_total: total,
+        valor_total: totalFinal,
+        valor_negociado_unitario: negociado.unitario,
+        valor_negociado_total: negociado.total,
+        origem_valor: origem,
+        valor_referencia_unitario: referencia.unitario,
+        valor_referencia_total: referencia.total,
+        percentual_diferenca: percentual,
         licitante: vencedor?.licitante ?? null,
         cnpj: vencedor?.cnpj ?? null,
         situacao: nao(extra.situacao ?? null) ?? lerSituacao(bloco.conteudo),
