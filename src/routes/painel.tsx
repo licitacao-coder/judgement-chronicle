@@ -826,14 +826,41 @@ function PaginaPainel() {
                   {texto(detalhe.situacao)}
                 </p>
                 <p>
-                  <span className="label-field text-muted-foreground">Melhor lance unitário</span>
+                  <span className="label-field text-muted-foreground">
+                    Valor unitário considerado
+                  </span>
                   <br />
                   {brl(detalhe.valor_unitario)}
                 </p>
                 <p>
-                  <span className="label-field text-muted-foreground">Melhor lance total</span>
+                  <span className="label-field text-muted-foreground">Valor total considerado</span>
                   <br />
                   {brl(detalhe.valor_total)}
+                </p>
+                <p>
+                  <span className="label-field text-muted-foreground">Origem do valor</span>
+                  <br />
+                  {ROTULO_ORIGEM[detalhe.origem_valor ?? ""] ?? "Não localizado"}
+                </p>
+                <p>
+                  <span className="label-field text-muted-foreground">Valor negociado</span>
+                  <br />
+                  {detalhe.valor_negociado_total ?? detalhe.valor_negociado_unitario
+                    ? `${brl(detalhe.valor_negociado_unitario)} (unitário) · ${brl(detalhe.valor_negociado_total)} (total)`
+                    : "Não informado no documento"}
+                </p>
+                <p>
+                  <span className="label-field text-muted-foreground">Valor de referência</span>
+                  <br />
+                  {brl(detalhe.valor_referencia_unitario)} (unitário) ·{" "}
+                  {brl(detalhe.valor_referencia_total)} (total)
+                </p>
+                <p>
+                  <span className="label-field text-muted-foreground">
+                    Diferença em relação à referência
+                  </span>
+                  <br />
+                  {pct(detalhe.percentual_diferenca)}
                 </p>
                 <p>
                   <span className="label-field text-muted-foreground">Licitante</span>
