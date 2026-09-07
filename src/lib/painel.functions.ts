@@ -11,6 +11,12 @@ export type ItemPainel = {
   unidade: string | null;
   valor_unitario: number | null;
   valor_total: number | null;
+  valor_negociado_unitario: number | null;
+  valor_negociado_total: number | null;
+  origem_valor: "VALOR_NEGOCIADO" | "MELHOR_LANCE" | null;
+  valor_referencia_unitario: number | null;
+  valor_referencia_total: number | null;
+  percentual_diferenca: number | null;
   licitante: string | null;
   cnpj: string | null;
   situacao: string | null;
