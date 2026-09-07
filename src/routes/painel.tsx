@@ -667,6 +667,8 @@ function PaginaPainel() {
                       <th className="p-2">Un.</th>
                       <th className="p-2">Unitário</th>
                       <th className="p-2">Total</th>
+                      <th className="p-2">Referência</th>
+                      <th className="p-2">% x referência</th>
                       <th className="p-2">Licitante</th>
                       <th className="p-2">CNPJ</th>
                       <th className="p-2">Situação</th>
