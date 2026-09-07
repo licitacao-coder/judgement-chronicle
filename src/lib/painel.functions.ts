@@ -11,6 +11,12 @@ export type ItemPainel = {
   unidade: string | null;
   valor_unitario: number | null;
   valor_total: number | null;
+  valor_negociado_unitario: number | null;
+  valor_negociado_total: number | null;
+  origem_valor: "VALOR_NEGOCIADO" | "MELHOR_LANCE" | null;
+  valor_referencia_unitario: number | null;
+  valor_referencia_total: number | null;
+  percentual_diferenca: number | null;
   licitante: string | null;
   cnpj: string | null;
   situacao: string | null;
@@ -107,14 +113,45 @@ function lerAceitoHabilitado(bloco: string) {
 
   const cabecalho = m[1] ?? "";
   const cnpj = (m[2] ?? "").trim().replace(/[,.;]$/, "");
-  const lance = m[3] ?? "";
+  // encerra o trecho do lance antes do início da lista de propostas dos demais licitantes
+  const lance = (m[3] ?? "").split(
+    /\bPropostas\b|\bFornecedor\b|\bBenef[íi]cio\b|\bValor\s+proposta\b|\bValor\s+negociado\b/i,
+  )[0]!;
 
   // nome do licitante: último "para <NOME>," antes do CNPJ
   const nomeMatch = /\bpara\s+(.+?)\s*,\s*$/i.exec(cabecalho) ?? /\bpara\s+(.+)$/i.exec(cabecalho);
   const licitante = nomeMatch?.[1]?.trim().replace(/[,.;]$/, "") ?? null;
 
   // valores rotulados: "(unitário)" e "(total)"
-  const valores = [...lance.matchAll(/R?\$?\s*([\d.]+,\d{2,4}|\d+(?:[.,]\d+)?)\s*\(?\s*(unit\w*|total)?/gi)];
+  const { unitario, total } = lerRotulados(lance);
+
+  return {
+    licitante,
+    cnpj: cnpj || null,
+    valor_unitario: unitario,
+    valor_total: total,
+    trecho: m[0]!
+      .split(/\bPropostas\b|\bFornecedor\s+Valor\s+ofertado\b/i)[0]!
+      .trim(),
+  };
+}
+
+/** Lê "Valor estimado" (valor de referência) do item, unitário e/ou total. */
+function lerValorReferencia(bloco: string) {
+  const plano = bloco.replace(/\s+/g, " ");
+  const m =
+    /Valor\s+(?:estimado|de\s+refer[êe]ncia|m[áa]ximo(?:\s+aceit[áa]vel)?)\s*:?\s*([^:]{0,120})/i.exec(
+      plano,
+    );
+  if (!m) return { unitario: null, total: null };
+  return lerRotulados(m[1] ?? "");
+}
+
+/** Lê valores rotulados como "(unitário)" e "(total)" de um trecho. */
+function lerRotulados(trecho: string) {
+  const valores = [
+    ...trecho.matchAll(/R?\$?\s*([\d.]+,\d{2,4}|\d+(?:[.,]\d+)?)\s*\(?\s*(unit\w*|total)?/gi),
+  ];
   let unitario: number | null = null;
   let total: number | null = null;
   const semRotulo: number[] = [];
@@ -130,14 +167,37 @@ function lerAceitoHabilitado(bloco: string) {
     total = semRotulo[semRotulo.length - 1]!;
     if (semRotulo.length > 1) unitario = semRotulo[0]!;
   }
+  return { unitario, total };
+}
 
-  return {
-    licitante,
-    cnpj: cnpj || null,
-    valor_unitario: unitario,
-    valor_total: total,
-    trecho: m[0]!.trim(),
-  };
+/**
+ * Lê o "Valor negociado" do licitante aceito e habilitado.
+ * Procura o trecho da proposta do próprio vencedor (identificado pelo CNPJ) e,
+ * na ausência dele, o valor negociado mais próximo do bloco aceito/habilitado.
+ */
+function lerValorNegociado(bloco: string, cnpj: string | null) {
+  const plano = bloco.replace(/\s+/g, " ");
+  const candidatos: string[] = [];
+
+  if (cnpj) {
+    const idx = plano.lastIndexOf(cnpj);
+    if (idx >= 0) candidatos.push(plano.slice(idx, idx + 900));
+  }
+  // Sem o CNPJ do vencedor não é possível isolar a proposta dele: usa o bloco inteiro
+  // apenas quando existe um único "Valor negociado" no item.
+  if (candidatos.length === 0 && (plano.match(/Valor\s+negociado/gi) ?? []).length === 1) {
+    candidatos.push(plano);
+  }
+
+  for (const trecho of candidatos) {
+    const m = /Valor\s+negociado\s*:?\s*([^:]{0,120})/i.exec(trecho);
+    if (!m) continue;
+    const bruto = m[1] ?? "";
+    if (/n[ãa]o\s+realizado|n[ãa]o\s+se\s+aplica|^\s*-\s*$/i.test(bruto.trim())) continue;
+    const { unitario, total } = lerRotulados(bruto);
+    if (unitario !== null || total !== null) return { unitario, total };
+  }
+  return { unitario: null, total: null };
 }
 
 
@@ -261,21 +321,50 @@ export const extrairItensAceitos = createServerFn({ method: "POST" })
       const vencedor = lerAceitoHabilitado(bloco.conteudo);
       const extra = complementos.get(bloco.numero) ?? {};
       const quantidade = numeroBr(nao(extra.quantidade ?? null));
-      const unitario = vencedor?.valor_unitario ?? null;
-      const total = vencedor?.valor_total ?? null;
+      const negociado = lerValorNegociado(bloco.conteudo, vencedor?.cnpj ?? null);
+      const referencia = lerValorReferencia(bloco.conteudo);
 
       const pendencias: string[] = [];
+
+      // O valor negociado prevalece sobre o melhor lance quando informado no bloco.
+      const usaNegociado = negociado.unitario !== null || negociado.total !== null;
+      const origem: ItemPainel["origem_valor"] = usaNegociado
+        ? "VALOR_NEGOCIADO"
+        : vencedor
+          ? "MELHOR_LANCE"
+          : null;
+      if (usaNegociado)
+        pendencias.push("Valor negociado informado no documento prevaleceu sobre o melhor lance.");
+
+      const unitario = usaNegociado ? negociado.unitario : (vencedor?.valor_unitario ?? null);
+      const total = usaNegociado ? negociado.total : (vencedor?.valor_total ?? null);
+
       let unitarioFinal = unitario;
-      if (unitarioFinal === null && quantidade && total) {
-        unitarioFinal = Number((total / quantidade).toFixed(4));
-        pendencias.push("Lance unitário calculado a partir do lance total ÷ quantidade.");
+      let totalFinal = total;
+      if (unitarioFinal === null && quantidade && totalFinal) {
+        unitarioFinal = Number((totalFinal / quantidade).toFixed(4));
+        pendencias.push("Valor unitário calculado a partir do valor total ÷ quantidade.");
+      }
+      if (totalFinal === null && quantidade && unitarioFinal) {
+        totalFinal = Number((unitarioFinal * quantidade).toFixed(2));
+        pendencias.push("Valor total calculado a partir do valor unitário × quantidade.");
       }
 
       let validacao: string | null = null;
       let diferenca: number | null = null;
-      if (quantidade && unitarioFinal && total) {
-        diferenca = Number((quantidade * unitarioFinal - total).toFixed(2));
-        validacao = Math.abs(diferenca) <= Math.max(0.05, total * 0.001) ? "OK" : "DIVERGENTE";
+      if (quantidade && unitarioFinal && totalFinal) {
+        diferenca = Number((quantidade * unitarioFinal - totalFinal).toFixed(2));
+        validacao = Math.abs(diferenca) <= Math.max(0.05, totalFinal * 0.001) ? "OK" : "DIVERGENTE";
+      }
+
+      // Percentual de diferença entre o valor considerado e o valor de referência.
+      let percentual: number | null = null;
+      if (referencia.total && totalFinal) {
+        percentual = Number((((totalFinal - referencia.total) / referencia.total) * 100).toFixed(2));
+      } else if (referencia.unitario && unitarioFinal) {
+        percentual = Number(
+          (((unitarioFinal - referencia.unitario) / referencia.unitario) * 100).toFixed(2),
+        );
       }
 
       if (!vencedor)
@@ -283,12 +372,12 @@ export const extrairItensAceitos = createServerFn({ method: "POST" })
       if (vencedor && !vencedor.licitante) pendencias.push("Licitante não localizado no bloco.");
       if (vencedor && !validarCnpj(vencedor.cnpj))
         pendencias.push("CNPJ fora do formato 00.000.000/0000-00.");
-      if (vencedor && total === null) pendencias.push("Melhor lance total não localizado.");
+      if (vencedor && totalFinal === null) pendencias.push("Valor total não localizado.");
       if (!nao(extra.especificacao ?? null)) pendencias.push("Especificação não localizada.");
       if (!quantidade) pendencias.push("Quantidade não localizada.");
+      if (percentual === null) pendencias.push("Valor de referência não localizado no item.");
       if (validacao === "DIVERGENTE")
-        pendencias.push("Quantidade × lance unitário difere do lance total.");
-
+        pendencias.push("Quantidade × valor unitário difere do valor total.");
 
       const status: ItemPainel["status_conferencia"] = !vencedor
         ? "ERRO_EXTRACAO"
@@ -302,7 +391,13 @@ export const extrairItensAceitos = createServerFn({ method: "POST" })
         quantidade,
         unidade: nao(extra.unidade ?? null),
         valor_unitario: unitarioFinal,
-        valor_total: total,
+        valor_total: totalFinal,
+        valor_negociado_unitario: negociado.unitario,
+        valor_negociado_total: negociado.total,
+        origem_valor: origem,
+        valor_referencia_unitario: referencia.unitario,
+        valor_referencia_total: referencia.total,
+        percentual_diferenca: percentual,
         licitante: vencedor?.licitante ?? null,
         cnpj: vencedor?.cnpj ?? null,
         situacao: nao(extra.situacao ?? null) ?? lerSituacao(bloco.conteudo),
@@ -392,6 +487,12 @@ export const salvarImportacaoPainel = createServerFn({ method: "POST" })
       unidade: (i["unidade"] as string) ?? null,
       valor_unitario: (i["valor_unitario"] as number) ?? null,
       valor_total: (i["valor_total"] as number) ?? null,
+      valor_negociado_unitario: (i["valor_negociado_unitario"] as number) ?? null,
+      valor_negociado_total: (i["valor_negociado_total"] as number) ?? null,
+      origem_valor: (i["origem_valor"] as string) ?? null,
+      valor_referencia_unitario: (i["valor_referencia_unitario"] as number) ?? null,
+      valor_referencia_total: (i["valor_referencia_total"] as number) ?? null,
+      percentual_diferenca: (i["percentual_diferenca"] as number) ?? null,
       licitante: (i["licitante"] as string) ?? null,
       cnpj: (i["cnpj"] as string) ?? null,
       situacao: (i["situacao"] as string) ?? null,

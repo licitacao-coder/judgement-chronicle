@@ -65,6 +65,16 @@ const brl = (v: number | null | undefined) =>
 
 const texto = (v: string | null | undefined) => (v && v.trim() ? v : "Não localizado");
 
+const pct = (v: number | null | undefined) =>
+  v === null || v === undefined
+    ? "Não localizado"
+    : `${v > 0 ? "+" : ""}${v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
+
+const ROTULO_ORIGEM: Record<string, string> = {
+  VALOR_NEGOCIADO: "Valor negociado",
+  MELHOR_LANCE: "Melhor lance",
+};
+
 async function sha256(arquivo: File): Promise<string> {
   const buf = await arquivo.arrayBuffer();
   const hash = await crypto.subtle.digest("SHA-256", buf);
@@ -350,8 +360,14 @@ function PaginaPainel() {
       Especificação: r.especificacao ?? "",
       Quantidade: r.quantidade ?? "",
       Unidade: r.unidade ?? "",
-      "Melhor Lance Unitário": r.valor_unitario ?? "",
-      "Melhor Lance Total": r.valor_total ?? "",
+      "Valor Unitário Considerado": r.valor_unitario ?? "",
+      "Valor Total Considerado": r.valor_total ?? "",
+      "Origem do Valor": ROTULO_ORIGEM[r.origem_valor ?? ""] ?? "",
+      "Valor Negociado Unitário": r.valor_negociado_unitario ?? "",
+      "Valor Negociado Total": r.valor_negociado_total ?? "",
+      "Valor de Referência Unitário": r.valor_referencia_unitario ?? "",
+      "Valor de Referência Total": r.valor_referencia_total ?? "",
+      "% Diferença x Referência": r.percentual_diferenca ?? "",
       Licitante: r.licitante ?? "",
       CNPJ: r.cnpj ?? "",
       Situação: r.situacao ?? "",
@@ -402,8 +418,11 @@ function PaginaPainel() {
       "Especificação",
       "Quantidade",
       "Unidade",
-      "Melhor Lance Unitário",
-      "Melhor Lance Total",
+      "Valor Unitário Considerado",
+      "Valor Total Considerado",
+      "Origem do Valor",
+      "Valor de Referência Total",
+      "% Diferença x Referência",
       "Licitante",
       "CNPJ",
       "Situação",
@@ -418,6 +437,9 @@ function PaginaPainel() {
         r.unidade,
         r.valor_unitario,
         r.valor_total,
+        ROTULO_ORIGEM[r.origem_valor ?? ""] ?? "",
+        r.valor_referencia_total,
+        r.percentual_diferenca,
         r.licitante,
         r.cnpj,
         r.situacao,
@@ -645,6 +667,8 @@ function PaginaPainel() {
                       <th className="p-2">Un.</th>
                       <th className="p-2">Unitário</th>
                       <th className="p-2">Total</th>
+                      <th className="p-2">Referência</th>
+                      <th className="p-2">% x referência</th>
                       <th className="p-2">Licitante</th>
                       <th className="p-2">CNPJ</th>
                       <th className="p-2">Situação</th>
@@ -667,6 +691,20 @@ function PaginaPainel() {
                         <td className="p-2">{r.unidade ?? "—"}</td>
                         <td className="p-2 whitespace-nowrap">{brl(r.valor_unitario)}</td>
                         <td className="p-2 whitespace-nowrap">{brl(r.valor_total)}</td>
+                        <td className="p-2 whitespace-nowrap">
+                          {brl(r.valor_referencia_total ?? r.valor_referencia_unitario)}
+                        </td>
+                        <td
+                          className={`p-2 whitespace-nowrap ${
+                            r.percentual_diferenca === null || r.percentual_diferenca === undefined
+                              ? "text-muted-foreground"
+                              : r.percentual_diferenca <= 0
+                                ? "text-emerald-600"
+                                : "text-destructive"
+                          }`}
+                        >
+                          {pct(r.percentual_diferenca)}
+                        </td>
                         <td className="max-w-[16rem] p-2">
                           <span className="line-clamp-2">{texto(r.licitante)}</span>
                         </td>
@@ -788,14 +826,41 @@ function PaginaPainel() {
                   {texto(detalhe.situacao)}
                 </p>
                 <p>
-                  <span className="label-field text-muted-foreground">Melhor lance unitário</span>
+                  <span className="label-field text-muted-foreground">
+                    Valor unitário considerado
+                  </span>
                   <br />
                   {brl(detalhe.valor_unitario)}
                 </p>
                 <p>
-                  <span className="label-field text-muted-foreground">Melhor lance total</span>
+                  <span className="label-field text-muted-foreground">Valor total considerado</span>
                   <br />
                   {brl(detalhe.valor_total)}
+                </p>
+                <p>
+                  <span className="label-field text-muted-foreground">Origem do valor</span>
+                  <br />
+                  {ROTULO_ORIGEM[detalhe.origem_valor ?? ""] ?? "Não localizado"}
+                </p>
+                <p>
+                  <span className="label-field text-muted-foreground">Valor negociado</span>
+                  <br />
+                  {detalhe.valor_negociado_total ?? detalhe.valor_negociado_unitario
+                    ? `${brl(detalhe.valor_negociado_unitario)} (unitário) · ${brl(detalhe.valor_negociado_total)} (total)`
+                    : "Não informado no documento"}
+                </p>
+                <p>
+                  <span className="label-field text-muted-foreground">Valor de referência</span>
+                  <br />
+                  {brl(detalhe.valor_referencia_unitario)} (unitário) ·{" "}
+                  {brl(detalhe.valor_referencia_total)} (total)
+                </p>
+                <p>
+                  <span className="label-field text-muted-foreground">
+                    Diferença em relação à referência
+                  </span>
+                  <br />
+                  {pct(detalhe.percentual_diferenca)}
                 </p>
                 <p>
                   <span className="label-field text-muted-foreground">Licitante</span>
