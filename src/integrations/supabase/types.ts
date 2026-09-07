@@ -704,7 +704,9 @@ export type Database = {
           licitante: string | null
           numero_item: number | null
           observacoes: string | null
+          origem_valor: string | null
           pagina: number | null
+          percentual_diferenca: number | null
           processo_id: string | null
           quantidade: number | null
           situacao: string | null
@@ -712,6 +714,10 @@ export type Database = {
           trecho_origem: string | null
           unidade: string | null
           validacao_total: string | null
+          valor_negociado_total: number | null
+          valor_negociado_unitario: number | null
+          valor_referencia_total: number | null
+          valor_referencia_unitario: number | null
           valor_total: number | null
           valor_unitario: number | null
         }
@@ -726,7 +732,9 @@ export type Database = {
           licitante?: string | null
           numero_item?: number | null
           observacoes?: string | null
+          origem_valor?: string | null
           pagina?: number | null
+          percentual_diferenca?: number | null
           processo_id?: string | null
           quantidade?: number | null
           situacao?: string | null
@@ -734,6 +742,10 @@ export type Database = {
           trecho_origem?: string | null
           unidade?: string | null
           validacao_total?: string | null
+          valor_negociado_total?: number | null
+          valor_negociado_unitario?: number | null
+          valor_referencia_total?: number | null
+          valor_referencia_unitario?: number | null
           valor_total?: number | null
           valor_unitario?: number | null
         }
@@ -748,7 +760,9 @@ export type Database = {
           licitante?: string | null
           numero_item?: number | null
           observacoes?: string | null
+          origem_valor?: string | null
           pagina?: number | null
+          percentual_diferenca?: number | null
           processo_id?: string | null
           quantidade?: number | null
           situacao?: string | null
@@ -756,6 +770,10 @@ export type Database = {
           trecho_origem?: string | null
           unidade?: string | null
           validacao_total?: string | null
+          valor_negociado_total?: number | null
+          valor_negociado_unitario?: number | null
+          valor_referencia_total?: number | null
+          valor_referencia_unitario?: number | null
           valor_total?: number | null
           valor_unitario?: number | null
         }
