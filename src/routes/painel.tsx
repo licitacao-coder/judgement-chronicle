@@ -65,6 +65,16 @@ const brl = (v: number | null | undefined) =>
 
 const texto = (v: string | null | undefined) => (v && v.trim() ? v : "Não localizado");
 
+const pct = (v: number | null | undefined) =>
+  v === null || v === undefined
+    ? "Não localizado"
+    : `${v > 0 ? "+" : ""}${v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
+
+const ROTULO_ORIGEM: Record<string, string> = {
+  VALOR_NEGOCIADO: "Valor negociado",
+  MELHOR_LANCE: "Melhor lance",
+};
+
 async function sha256(arquivo: File): Promise<string> {
   const buf = await arquivo.arrayBuffer();
   const hash = await crypto.subtle.digest("SHA-256", buf);
