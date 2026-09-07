@@ -691,6 +691,20 @@ function PaginaPainel() {
                         <td className="p-2">{r.unidade ?? "—"}</td>
                         <td className="p-2 whitespace-nowrap">{brl(r.valor_unitario)}</td>
                         <td className="p-2 whitespace-nowrap">{brl(r.valor_total)}</td>
+                        <td className="p-2 whitespace-nowrap">
+                          {brl(r.valor_referencia_total ?? r.valor_referencia_unitario)}
+                        </td>
+                        <td
+                          className={`p-2 whitespace-nowrap ${
+                            r.percentual_diferenca === null || r.percentual_diferenca === undefined
+                              ? "text-muted-foreground"
+                              : r.percentual_diferenca <= 0
+                                ? "text-emerald-600"
+                                : "text-destructive"
+                          }`}
+                        >
+                          {pct(r.percentual_diferenca)}
+                        </td>
                         <td className="max-w-[16rem] p-2">
                           <span className="line-clamp-2">{texto(r.licitante)}</span>
                         </td>
