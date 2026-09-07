@@ -130,7 +130,9 @@ function lerAceitoHabilitado(bloco: string) {
     cnpj: cnpj || null,
     valor_unitario: unitario,
     valor_total: total,
-    trecho: m[0]!.trim(),
+    trecho: m[0]!
+      .split(/\bPropostas\b|\bFornecedor\s+Valor\s+ofertado\b/i)[0]!
+      .trim(),
   };
 }
 
