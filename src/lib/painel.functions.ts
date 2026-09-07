@@ -146,6 +146,66 @@ function lerAceitoHabilitado(bloco: string) {
   };
 }
 
+/** Lê "Valor estimado" (valor de referência) do item, unitário e/ou total. */
+function lerValorReferencia(bloco: string) {
+  const plano = bloco.replace(/\s+/g, " ");
+  const m =
+    /Valor\s+(?:estimado|de\s+refer[êe]ncia|m[áa]ximo(?:\s+aceit[áa]vel)?)\s*:?\s*([^:]{0,120})/i.exec(
+      plano,
+    );
+  if (!m) return { unitario: null, total: null };
+  return lerRotulados(m[1] ?? "");
+}
+
+/** Lê valores rotulados como "(unitário)" e "(total)" de um trecho. */
+function lerRotulados(trecho: string) {
+  const valores = [
+    ...trecho.matchAll(/R?\$?\s*([\d.]+,\d{2,4}|\d+(?:[.,]\d+)?)\s*\(?\s*(unit\w*|total)?/gi),
+  ];
+  let unitario: number | null = null;
+  let total: number | null = null;
+  const semRotulo: number[] = [];
+  for (const v of valores) {
+    const n = numeroBr(v[1]!);
+    if (n === null) continue;
+    const rotulo = v[2]?.toLowerCase();
+    if (rotulo?.startsWith("unit")) unitario = n;
+    else if (rotulo === "total") total = n;
+    else semRotulo.push(n);
+  }
+  if (total === null && unitario === null && semRotulo.length) {
+    total = semRotulo[semRotulo.length - 1]!;
+    if (semRotulo.length > 1) unitario = semRotulo[0]!;
+  }
+  return { unitario, total };
+}
+
+/**
+ * Lê o "Valor negociado" do licitante aceito e habilitado.
+ * Procura o trecho da proposta do próprio vencedor (identificado pelo CNPJ) e,
+ * na ausência dele, o valor negociado mais próximo do bloco aceito/habilitado.
+ */
+function lerValorNegociado(bloco: string, cnpj: string | null) {
+  const plano = bloco.replace(/\s+/g, " ");
+  const candidatos: string[] = [];
+
+  if (cnpj) {
+    const idx = plano.lastIndexOf(cnpj);
+    if (idx >= 0) candidatos.push(plano.slice(idx, idx + 900));
+  }
+  candidatos.push(plano);
+
+  for (const trecho of candidatos) {
+    const m = /Valor\s+negociado\s*:?\s*([^:]{0,120})/i.exec(trecho);
+    if (!m) continue;
+    const bruto = m[1] ?? "";
+    if (/n[ãa]o\s+realizado|n[ãa]o\s+se\s+aplica|^\s*-\s*$/i.test(bruto.trim())) continue;
+    const { unitario, total } = lerRotulados(bruto);
+    if (unitario !== null || total !== null) return { unitario, total };
+  }
+  return { unitario: null, total: null };
+}
+
 
 /** Lê a situação do item preservando a terminologia original do documento. */
 function lerSituacao(bloco: string): string | null {
