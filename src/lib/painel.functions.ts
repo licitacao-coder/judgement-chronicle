@@ -193,7 +193,11 @@ function lerValorNegociado(bloco: string, cnpj: string | null) {
     const idx = plano.lastIndexOf(cnpj);
     if (idx >= 0) candidatos.push(plano.slice(idx, idx + 900));
   }
-  candidatos.push(plano);
+  // Sem o CNPJ do vencedor não é possível isolar a proposta dele: usa o bloco inteiro
+  // apenas quando existe um único "Valor negociado" no item.
+  if (candidatos.length === 0 && (plano.match(/Valor\s+negociado/gi) ?? []).length === 1) {
+    candidatos.push(plano);
+  }
 
   for (const trecho of candidatos) {
     const m = /Valor\s+negociado\s*:?\s*([^:]{0,120})/i.exec(trecho);
