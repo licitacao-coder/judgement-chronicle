@@ -31,6 +31,10 @@ import {
 } from "@/lib/painel.functions";
 
 export const Route = createFileRoute("/painel")({
+  validateSearch: (search: Record<string, unknown>): { processo?: string } =>
+    typeof search["processo"] === "string" && search["processo"]
+      ? { processo: search["processo"] }
+      : {},
   head: () => ({
     meta: [
       { title: "Painel de Itens Aceitos e Habilitados | Sessão Pública" },
@@ -87,8 +91,10 @@ function PaginaPainel() {
   const queryClient = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const { processo: processoDaUrl } = Route.useSearch();
+
   const [documentoId, setDocumentoId] = useState<string>("");
-  const [processoId, setProcessoId] = useState<string>("");
+  const [processoId, setProcessoId] = useState<string>(processoDaUrl ?? "");
   const [previa, setPrevia] = useState<Registro[] | null>(null);
   const [ocupado, setOcupado] = useState(false);
   const [detalhe, setDetalhe] = useState<Registro | null>(null);
@@ -139,8 +145,9 @@ function PaginaPainel() {
 
   const importacaoAtual = useMemo(() => {
     const lista = importacoes ?? [];
+    // Cada painel exibe apenas a análise mais recente do processo selecionado.
     if (processoId) return lista.find((i) => i.processo_id === processoId) ?? null;
-    return lista[0] ?? null;
+    return lista.find((i) => !i.processo_id) ?? null;
   }, [importacoes, processoId]);
 
   const { data: itensSalvos } = useQuery({
