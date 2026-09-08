@@ -31,6 +31,9 @@ import {
 } from "@/lib/painel.functions";
 
 export const Route = createFileRoute("/painel")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    processo: typeof search["processo"] === "string" ? (search["processo"] as string) : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Painel de Itens Aceitos e Habilitados | Sessão Pública" },
