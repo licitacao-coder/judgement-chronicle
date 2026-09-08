@@ -91,8 +91,10 @@ function PaginaPainel() {
   const queryClient = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const { processo: processoDaUrl } = Route.useSearch();
+
   const [documentoId, setDocumentoId] = useState<string>("");
-  const [processoId, setProcessoId] = useState<string>("");
+  const [processoId, setProcessoId] = useState<string>(processoDaUrl ?? "");
   const [previa, setPrevia] = useState<Registro[] | null>(null);
   const [ocupado, setOcupado] = useState(false);
   const [detalhe, setDetalhe] = useState<Registro | null>(null);
