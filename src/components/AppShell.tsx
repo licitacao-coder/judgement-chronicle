@@ -43,8 +43,11 @@ export function AppShell({
           </Link>
           <div className="flex items-center gap-4">
             <nav className="flex items-center gap-3 text-sm">
-              <Link to="/" className="hover:underline">
+              <Link to="/processos" className="hover:underline">
                 Processos
+              </Link>
+              <Link to="/" className="hover:underline">
+                Nova análise
               </Link>
               <Link to="/documentos" className="hover:underline">
                 Documentos
@@ -52,7 +55,7 @@ export function AppShell({
               <Link to="/relatorios" className="hover:underline">
                 Relatórios
               </Link>
-              <Link to="/painel" className="hover:underline">
+              <Link to="/painel" search={{}} className="hover:underline">
                 Itens aceitos
               </Link>
 
