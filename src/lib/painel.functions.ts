@@ -2,6 +2,11 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { chamarIA, extrairJson } from "./ia.server";
+import {
+  chamarServicoPython,
+  converterItensPython,
+  esquemaItensPython,
+} from "./motores/motorPython.server";
 import { REGRAS_GERAIS } from "./prompts.server";
 
 export type ItemPainel = {
