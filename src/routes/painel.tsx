@@ -98,6 +98,25 @@ function PaginaPainel() {
   const [previa, setPrevia] = useState<Registro[] | null>(null);
   const [ocupado, setOcupado] = useState(false);
   const [detalhe, setDetalhe] = useState<Registro | null>(null);
+  const [motor, setMotor] = useState<"INTERNO" | "PYTHON">("INTERNO");
+  const [leitura, setLeitura] = useState<{
+    motor: "INTERNO" | "PYTHON";
+    versao: string | null;
+    duracao: number | null;
+  } | null>(null);
+
+  const { data: configMotor } = useQuery({
+    queryKey: ["configuracao_motor"],
+    queryFn: () => obterConfigMotor(),
+  });
+  const pythonDisponivel =
+    !!configMotor?.endereco_servico && configMotor.situacao === "ATIVO";
+
+  useEffect(() => {
+    if (configMotor?.motor_padrao === "PYTHON" && pythonDisponivel) setMotor("PYTHON");
+  }, [configMotor?.motor_padrao, pythonDisponivel]);
+
+
 
   const [busca, setBusca] = useState("");
   const [filtroItem, setFiltroItem] = useState("");
