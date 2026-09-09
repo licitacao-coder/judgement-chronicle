@@ -1,0 +1,142 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { verificarServicoPython, type ConfigMotor } from "./motores/motorPython.server";
+
+const vazio: ConfigMotor = {
+  id: null,
+  endereco_servico: null,
+  motor_padrao: "INTERNO",
+  situacao: "NAO_CONFIGURADO",
+  versao_servico: null,
+  ultima_verificacao: null,
+  mensagem_verificacao: null,
+};
+
+async function garantirAdmin(context: { supabase: unknown; userId: string }) {
+  const supabase = context.supabase as {
+    rpc: (
+      nome: string,
+      args: Record<string, unknown>,
+    ) => Promise<{ data: boolean | null; error: unknown }>;
+  };
+  const { data } = await supabase.rpc("has_role", {
+    _user_id: context.userId,
+    _role: "ADMIN",
+  });
+  if (!data) throw new Error("Somente administradores podem alterar a configuração dos motores.");
+}
+
+export const obterConfigMotor = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data } = await context.supabase
+      .from("configuracao_motor")
+      .select("*")
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (!data) return { ...vazio, chaveConfigurada: !!process.env["MOTOR_PYTHON_CHAVE"] };
+    return {
+      id: data.id,
+      endereco_servico: data.endereco_servico,
+      motor_padrao: (data.motor_padrao === "PYTHON" ? "PYTHON" : "INTERNO") as
+        | "PYTHON"
+        | "INTERNO",
+      situacao: data.situacao,
+      versao_servico: data.versao_servico,
+      ultima_verificacao: data.ultima_verificacao,
+      mensagem_verificacao: data.mensagem_verificacao,
+      chaveConfigurada: !!process.env["MOTOR_PYTHON_CHAVE"],
+    };
+  });
+
+export const salvarConfigMotor = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        endereco: z.string().trim().max(400).nullable(),
+        motorPadrao: z.enum(["INTERNO", "PYTHON"]),
+        observacoes: z.string().trim().max(2000).nullable().optional(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    await garantirAdmin(context);
+    const supabase = context.supabase;
+    const endereco = data.endereco && data.endereco.length > 0 ? data.endereco : null;
+    if (endereco && !/^https?:\/\//i.test(endereco)) {
+      throw new Error("Informe o endereço completo do serviço, começando por http:// ou https://");
+    }
+    if (data.motorPadrao === "PYTHON" && !endereco) {
+      throw new Error("Informe o endereço do serviço Python antes de torná-lo o motor padrão.");
+    }
+
+    const { data: existente } = await supabase
+      .from("configuracao_motor")
+      .select("id")
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    const registro = {
+      endereco_servico: endereco,
+      motor_padrao: data.motorPadrao,
+      situacao: endereco ? "NAO_VERIFICADO" : "NAO_CONFIGURADO",
+      observacoes: data.observacoes ?? null,
+      usuario_atualizacao: context.userId,
+    };
+
+    if (existente) {
+      const { error } = await supabase
+        .from("configuracao_motor")
+        .update(registro)
+        .eq("id", existente.id);
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await supabase.from("configuracao_motor").insert(registro);
+      if (error) throw new Error(error.message);
+    }
+
+    await supabase.from("auditoria").insert({
+      usuario_id: context.userId,
+      entidade: "configuracao_motor",
+      acao: "ATUALIZACAO_CONFIG_MOTOR",
+      valor_novo: `motor padrão ${data.motorPadrao}${endereco ? ` | serviço ${endereco}` : ""}`,
+    });
+
+    return { ok: true };
+  });
+
+export const testarConexaoMotor = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await garantirAdmin(context);
+    const supabase = context.supabase;
+    const { data: config } = await supabase
+      .from("configuracao_motor")
+      .select("id, endereco_servico")
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (!config?.endereco_servico) {
+      throw new Error("Nenhum endereço de serviço Python está configurado.");
+    }
+
+    const resultado = await verificarServicoPython(config.endereco_servico);
+    await supabase
+      .from("configuracao_motor")
+      .update({
+        situacao: resultado.ok ? "ATIVO" : "INDISPONIVEL",
+        versao_servico: resultado.ok ? resultado.versao : null,
+        ultima_verificacao: new Date().toISOString(),
+        mensagem_verificacao: resultado.ok
+          ? `Serviço respondendo${resultado.ocr ? " com leitura de documentos digitalizados (OCR)" : ""}.`
+          : resultado.mensagem,
+      })
+      .eq("id", config.id);
+
+    return resultado;
+  });
