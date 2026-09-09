@@ -36,7 +36,12 @@ export const obterConfigMotor = createServerFn({ method: "POST" })
       .order("created_at", { ascending: true })
       .limit(1)
       .maybeSingle();
-    if (!data) return { ...vazio, chaveConfigurada: !!process.env["MOTOR_PYTHON_CHAVE"] };
+    if (!data)
+      return {
+        ...vazio,
+        observacoes: null as string | null,
+        chaveConfigurada: !!process.env["MOTOR_PYTHON_CHAVE"],
+      };
     return {
       id: data.id,
       endereco_servico: data.endereco_servico,
