@@ -240,6 +240,12 @@ function Configuracoes() {
                   é um serviço próprio, instalado por vocês, capaz de ler documentos digitalizados
                   como imagem. Quem analisa pode escolher o motor a cada documento.
                 </p>
+                <p className="text-xs text-muted-foreground">
+                  O passo a passo de instalação no Windows está no arquivo
+                  {" "}
+                  <span className="font-medium">servico-python/INSTALAR-WINDOWS.md</span> do
+                  projeto.
+                </p>
                 <div className="grid gap-2">
                   <Label>Endereço do serviço do órgão</Label>
                   <Input
