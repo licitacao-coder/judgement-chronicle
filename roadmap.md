@@ -24,7 +24,10 @@
 ## Concluído recentemente
 - Painel de Itens Aceitos e Habilitados: extração do Termo de Julgamento por item, prévia, filtros, resumos, histórico e exportação Excel/CSV
 
+## Concluído recentemente
+- Modo duplo de análise: motor interno (padrão) + serviço de leitura do órgão (Python/OCR) selecionável por documento, com registro do motor usado, aba de configuração para administrador, teste de conexão e opção de refazer no motor interno
+
 ## Pendente
 - Geração opcional de PDF
 - Teste ponta a ponta com os PDFs enviados (Pregão 9/2026, Grupo 1)
-- Modo duplo de análise: motor interno (atual) + motor Python externo opcional, selecionável por documento, com registro do motor usado e retorno automático ao interno quando o Python estiver indisponível
+- Instalação do serviço de leitura do órgão (pasta servico-python) pela equipe de TI
