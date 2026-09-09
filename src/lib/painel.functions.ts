@@ -503,6 +503,9 @@ export const salvarImportacaoPainel = createServerFn({ method: "POST" })
         documentoId: z.string().uuid(),
         processoId: z.string().uuid().nullable().optional(),
         identificacaoProcesso: z.string().nullable().optional(),
+        motor: z.enum(["INTERNO", "PYTHON"]).optional(),
+        motorVersao: z.string().nullable().optional(),
+        duracaoMs: z.number().nullable().optional(),
         itens: z.array(z.record(z.string(), z.unknown())),
       })
       .parse(data),
