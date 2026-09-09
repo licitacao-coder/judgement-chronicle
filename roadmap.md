@@ -27,3 +27,4 @@
 ## Pendente
 - Geração opcional de PDF
 - Teste ponta a ponta com os PDFs enviados (Pregão 9/2026, Grupo 1)
+- Modo duplo de análise: motor interno (atual) + motor Python externo opcional, selecionável por documento, com registro do motor usado e retorno automático ao interno quando o Python estiver indisponível
