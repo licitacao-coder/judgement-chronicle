@@ -59,6 +59,48 @@ export type Database = {
         }
         Relationships: []
       }
+      configuracao_motor: {
+        Row: {
+          created_at: string
+          endereco_servico: string | null
+          id: string
+          mensagem_verificacao: string | null
+          motor_padrao: string
+          observacoes: string | null
+          situacao: string
+          ultima_verificacao: string | null
+          updated_at: string
+          usuario_atualizacao: string | null
+          versao_servico: string | null
+        }
+        Insert: {
+          created_at?: string
+          endereco_servico?: string | null
+          id?: string
+          mensagem_verificacao?: string | null
+          motor_padrao?: string
+          observacoes?: string | null
+          situacao?: string
+          ultima_verificacao?: string | null
+          updated_at?: string
+          usuario_atualizacao?: string | null
+          versao_servico?: string | null
+        }
+        Update: {
+          created_at?: string
+          endereco_servico?: string | null
+          id?: string
+          mensagem_verificacao?: string | null
+          motor_padrao?: string
+          observacoes?: string | null
+          situacao?: string
+          ultima_verificacao?: string | null
+          updated_at?: string
+          usuario_atualizacao?: string | null
+          versao_servico?: string | null
+        }
+        Relationships: []
+      }
       configuracao_template: {
         Row: {
           ativo: boolean
@@ -187,10 +229,13 @@ export type Database = {
           categoria: string
           data_processamento: string | null
           data_upload: string
+          duracao_ms: number | null
           erro_processamento: string | null
           extensao: string | null
           hash_documento: string | null
           id: string
+          motor: string
+          motor_versao: string | null
           nome_armazenado: string
           nome_original: string
           paginas_json: Json | null
@@ -206,10 +251,13 @@ export type Database = {
           categoria?: string
           data_processamento?: string | null
           data_upload?: string
+          duracao_ms?: number | null
           erro_processamento?: string | null
           extensao?: string | null
           hash_documento?: string | null
           id?: string
+          motor?: string
+          motor_versao?: string | null
           nome_armazenado: string
           nome_original: string
           paginas_json?: Json | null
@@ -225,10 +273,13 @@ export type Database = {
           categoria?: string
           data_processamento?: string | null
           data_upload?: string
+          duracao_ms?: number | null
           erro_processamento?: string | null
           extensao?: string | null
           hash_documento?: string | null
           id?: string
+          motor?: string
+          motor_versao?: string | null
           nome_armazenado?: string
           nome_original?: string
           paginas_json?: Json | null
@@ -640,8 +691,11 @@ export type Database = {
           atual: boolean
           created_at: string
           documento_id: string | null
+          duracao_ms: number | null
           id: string
           identificacao_processo: string | null
+          motor: string
+          motor_versao: string | null
           nome_documento: string | null
           processo_id: string | null
           total_itens: number
@@ -653,8 +707,11 @@ export type Database = {
           atual?: boolean
           created_at?: string
           documento_id?: string | null
+          duracao_ms?: number | null
           id?: string
           identificacao_processo?: string | null
+          motor?: string
+          motor_versao?: string | null
           nome_documento?: string | null
           processo_id?: string | null
           total_itens?: number
@@ -666,8 +723,11 @@ export type Database = {
           atual?: boolean
           created_at?: string
           documento_id?: string | null
+          duracao_ms?: number | null
           id?: string
           identificacao_processo?: string | null
+          motor?: string
+          motor_versao?: string | null
           nome_documento?: string | null
           processo_id?: string | null
           total_itens?: number
