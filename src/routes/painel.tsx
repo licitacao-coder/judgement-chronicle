@@ -311,23 +311,41 @@ function PaginaPainel() {
     }
   }
 
-  async function extrair(idDocumento?: string) {
+  async function extrair(idDocumento?: string, motorForcado?: "INTERNO" | "PYTHON") {
     const alvo = idDocumento ?? documentoId;
     if (!alvo) {
       toast.error("Selecione o Termo de Julgamento.");
       return;
     }
+    const motorUsado = motorForcado ?? motor;
     setOcupado(true);
     try {
-      const resultado = await extrairItensAceitos({ data: { documentoId: alvo } });
+      const resultado = await extrairItensAceitos({
+        data: { documentoId: alvo, motor: motorUsado },
+      });
       setPrevia(resultado.itens);
+      setLeitura({
+        motor: resultado.motor,
+        versao: resultado.motorVersao ?? null,
+        duracao: resultado.duracaoMs ?? null,
+      });
       toast.success(
         `${resultado.itens.length} item(ns) aceitos e habilitados localizados em ${resultado.totalBlocos} item(ns) analisados.`,
       );
     } catch (e) {
-      toast.error("Falha na extração", {
-        description: e instanceof Error ? e.message : String(e),
-      });
+      const descricao = e instanceof Error ? e.message : String(e);
+      if (motorUsado === "PYTHON") {
+        toast.error("O serviço Python não concluiu a leitura", {
+          description: descricao,
+          action: {
+            label: "Refazer no motor interno",
+            onClick: () => void extrair(alvo, "INTERNO"),
+          },
+          duration: 12000,
+        });
+      } else {
+        toast.error("Falha na extração", { description: descricao });
+      }
     } finally {
       setOcupado(false);
     }
@@ -342,6 +360,9 @@ function PaginaPainel() {
           documentoId,
           processoId: processoId || null,
           identificacaoProcesso: identificacaoProcesso || null,
+          motor: leitura?.motor ?? "INTERNO",
+          motorVersao: leitura?.versao ?? null,
+          duracaoMs: leitura?.duracao ?? null,
           itens: previa as unknown as Record<string, unknown>[],
         },
       });
