@@ -21,6 +21,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { placeholdersTemplate } from "@/lib/admin.functions";
+import {
+  obterConfigMotor,
+  salvarConfigMotor,
+  testarConexaoMotor,
+} from "@/lib/motores.functions";
+
+const SITUACAO_MOTOR: Record<string, string> = {
+  NAO_CONFIGURADO: "Não configurado",
+  NAO_VERIFICADO: "Não verificado",
+  ATIVO: "Ativo",
+  INDISPONIVEL: "Indisponível",
+};
 
 export const Route = createFileRoute("/configuracoes")({
   head: () => ({
@@ -93,6 +105,56 @@ function Configuracoes() {
   const [secoes, setSecoes] = useState<Secao[]>([]);
   const [campos, setCampos] = useState<Campo[]>([]);
   const [salvando, setSalvando] = useState(false);
+
+  const [endereco, setEndereco] = useState("");
+  const [motorPadrao, setMotorPadrao] = useState<"INTERNO" | "PYTHON">("INTERNO");
+  const [obsMotor, setObsMotor] = useState("");
+  const [ocupadoMotor, setOcupadoMotor] = useState(false);
+
+  const { data: configMotor } = useQuery({
+    queryKey: ["configuracao_motor"],
+    queryFn: () => obterConfigMotor(),
+  });
+
+  useEffect(() => {
+    if (!configMotor) return;
+    setEndereco(configMotor.endereco_servico ?? "");
+    setMotorPadrao(configMotor.motor_padrao);
+    setObsMotor(configMotor.observacoes ?? "");
+  }, [configMotor]);
+
+  async function salvarMotores() {
+    setOcupadoMotor(true);
+    try {
+      await salvarConfigMotor({
+        data: { endereco: endereco.trim() || null, motorPadrao, observacoes: obsMotor || null },
+      });
+      toast.success("Configuração dos motores salva.");
+      await queryClient.invalidateQueries({ queryKey: ["configuracao_motor"] });
+    } catch (e) {
+      toast.error("Não foi possível salvar", {
+        description: e instanceof Error ? e.message : String(e),
+      });
+    } finally {
+      setOcupadoMotor(false);
+    }
+  }
+
+  async function testarMotor() {
+    setOcupadoMotor(true);
+    try {
+      const r = await testarConexaoMotor();
+      await queryClient.invalidateQueries({ queryKey: ["configuracao_motor"] });
+      if (r.ok) toast.success("O serviço do órgão respondeu normalmente.");
+      else toast.error("O serviço não respondeu", { description: r.mensagem });
+    } catch (e) {
+      toast.error("Não foi possível testar", {
+        description: e instanceof Error ? e.message : String(e),
+      });
+    } finally {
+      setOcupadoMotor(false);
+    }
+  }
 
   useEffect(() => {
     if (!config) return;
