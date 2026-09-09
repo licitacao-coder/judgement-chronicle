@@ -47,6 +47,7 @@ export const obterConfigMotor = createServerFn({ method: "POST" })
       versao_servico: data.versao_servico,
       ultima_verificacao: data.ultima_verificacao,
       mensagem_verificacao: data.mensagem_verificacao,
+      observacoes: data.observacoes,
       chaveConfigurada: !!process.env["MOTOR_PYTHON_CHAVE"],
     };
   });
