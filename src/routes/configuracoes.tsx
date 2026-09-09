@@ -246,7 +246,6 @@ function Configuracoes() {
                   <span className="font-medium">servico-python/INSTALAR-WINDOWS.md</span> do
                   projeto.
                 </p>
-                </p>
                 <div className="grid gap-2">
                   <Label>Endereço do serviço do órgão</Label>
                   <Input
