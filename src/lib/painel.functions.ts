@@ -551,6 +551,9 @@ export const salvarImportacaoPainel = createServerFn({ method: "POST" })
         total_itens: data.itens.length,
         valor_total: valorTotal,
         atual: true,
+        motor: data.motor ?? "INTERNO",
+        motor_versao: data.motorVersao ?? null,
+        duracao_ms: data.duracaoMs ?? null,
         usuario: context.userId,
       })
       .select()
