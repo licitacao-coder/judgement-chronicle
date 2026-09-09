@@ -164,7 +164,90 @@ function Configuracoes() {
             <TabsTrigger value="secoes">Seções do documento</TabsTrigger>
             <TabsTrigger value="campos">Campos e placeholders</TabsTrigger>
             <TabsTrigger value="modelo">Modelo e validação</TabsTrigger>
+            <TabsTrigger value="motores">Motores de análise</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="motores" className="space-y-4">
+            <Card className="panel">
+              <CardHeader>
+                <CardTitle className="text-base">Motores de leitura dos documentos</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-4">
+                <p className="text-sm text-muted-foreground">
+                  O motor interno é usado por padrão e não depende de nada externo. O motor do órgão
+                  é um serviço próprio, instalado por vocês, capaz de ler documentos digitalizados
+                  como imagem. Quem analisa pode escolher o motor a cada documento.
+                </p>
+                <div className="grid gap-2">
+                  <Label>Endereço do serviço do órgão</Label>
+                  <Input
+                    value={endereco}
+                    onChange={(e) => setEndereco(e.target.value)}
+                    placeholder="https://leitura.orgao.gov.br"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Motor usado por padrão</Label>
+                  <Select
+                    value={motorPadrao}
+                    onValueChange={(v) => setMotorPadrao(v as "INTERNO" | "PYTHON")}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="INTERNO">Motor interno</SelectItem>
+                      <SelectItem value="PYTHON">Serviço do órgão</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label>Observações</Label>
+                  <Textarea
+                    value={obsMotor}
+                    onChange={(e) => setObsMotor(e.target.value)}
+                    rows={3}
+                  />
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button onClick={() => void salvarMotores()} disabled={ocupadoMotor}>
+                    {ocupadoMotor ? "Salvando..." : "Salvar motores"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => void testarMotor()}
+                    disabled={ocupadoMotor || !endereco}
+                  >
+                    Testar conexão
+                  </Button>
+                  <Badge variant={configMotor?.situacao === "ATIVO" ? "default" : "secondary"}>
+                    {SITUACAO_MOTOR[configMotor?.situacao ?? "NAO_CONFIGURADO"] ??
+                      configMotor?.situacao}
+                  </Badge>
+                  {configMotor?.versao_servico ? (
+                    <span className="text-xs text-muted-foreground">
+                      Versão {configMotor.versao_servico}
+                    </span>
+                  ) : null}
+                </div>
+                {configMotor?.mensagem_verificacao ? (
+                  <p className="text-xs text-muted-foreground">
+                    {configMotor.mensagem_verificacao}
+                    {configMotor.ultima_verificacao
+                      ? ` · verificado em ${new Date(configMotor.ultima_verificacao).toLocaleString("pt-BR")}`
+                      : ""}
+                  </p>
+                ) : null}
+                {!configMotor?.chaveConfigurada ? (
+                  <p className="text-xs text-muted-foreground">
+                    Nenhuma chave de acesso ao serviço do órgão está guardada. Se o serviço exigir
+                    chave, peça o cadastro dela antes de usar o motor.
+                  </p>
+                ) : null}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
 
           <TabsContent value="secoes" className="space-y-4">
             {secoes.map((s, i) => (
