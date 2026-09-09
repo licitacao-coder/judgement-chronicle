@@ -246,18 +246,87 @@ ${blocos
 
 export const extrairItensAceitos = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) => z.object({ documentoId: z.string().uuid() }).parse(data))
+  .inputValidator((data) =>
+    z
+      .object({
+        documentoId: z.string().uuid(),
+        motor: z.enum(["INTERNO", "PYTHON", "PADRAO"]).optional(),
+      })
+      .parse(data),
+  )
   .handler(async ({ data, context }) => {
     const supabase = context.supabase;
+    const inicio = Date.now();
     const { data: doc } = await supabase
       .from("documentos")
-      .select("id, nome_original, texto_extraido, quantidade_paginas")
+      .select("id, nome_original, texto_extraido, quantidade_paginas, caminho_arquivo, extensao")
       .eq("id", data.documentoId)
       .single();
     if (!doc) throw new Error("Documento não encontrado.");
+
+    // Motor escolhido na tela ou o motor padrão definido nas Configurações.
+    const { data: config } = await supabase
+      .from("configuracao_motor")
+      .select("endereco_servico, motor_padrao, situacao")
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    const escolhido =
+      !data.motor || data.motor === "PADRAO"
+        ? config?.motor_padrao === "PYTHON"
+          ? "PYTHON"
+          : "INTERNO"
+        : data.motor;
+
+    if (escolhido === "PYTHON") {
+      if (!config?.endereco_servico) {
+        throw new Error(
+          "O serviço Python não está configurado. Informe o endereço em Configurações.",
+        );
+      }
+      let arquivoBase64: string | null = null;
+      if (doc.caminho_arquivo) {
+        const { data: arquivo } = await supabase.storage
+          .from("documentos")
+          .download(doc.caminho_arquivo);
+        if (arquivo) {
+          const bytes = new Uint8Array(await arquivo.arrayBuffer());
+          let bruto = "";
+          for (const b of bytes) bruto += String.fromCharCode(b);
+          arquivoBase64 = btoa(bruto);
+        }
+      }
+      const resposta = await chamarServicoPython(
+        config.endereco_servico,
+        "/itens-aceitos",
+        {
+          nome_documento: doc.nome_original,
+          extensao: doc.extensao,
+          texto: doc.texto_extraido,
+          arquivo_base64: arquivoBase64,
+        },
+        esquemaItensPython,
+      );
+      const itensPython = converterItensPython(resposta);
+      if (itensPython.length === 0) {
+        throw new Error(
+          'O serviço Python não localizou itens com a situação "Aceito e Habilitado" no documento.',
+        );
+      }
+      return {
+        documentoId: doc.id,
+        nomeDocumento: doc.nome_original,
+        totalBlocos: resposta.total_blocos ?? itensPython.length,
+        itens: itensPython,
+        motor: "PYTHON" as const,
+        motorVersao: resposta.versao,
+        duracaoMs: Date.now() - inicio,
+      };
+    }
+
     if (!doc.texto_extraido || doc.texto_extraido.replace(/\s/g, "").length < 200) {
       throw new Error(
-        "O documento ainda não possui texto pesquisável. Envie o Termo de Julgamento em PDF com texto (não digitalizado como imagem).",
+        "O documento ainda não possui texto pesquisável. Envie o Termo de Julgamento em PDF com texto (não digitalizado como imagem) ou use o motor Python com leitura de imagem (OCR).",
       );
     }
 
