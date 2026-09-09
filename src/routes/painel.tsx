@@ -570,6 +570,36 @@ function PaginaPainel() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="grid gap-2">
+              <span className="label-field">Motor de leitura</span>
+              <Select value={motor} onValueChange={(v) => setMotor(v as "INTERNO" | "PYTHON")}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="INTERNO">Motor interno (padrão)</SelectItem>
+                  <SelectItem value="PYTHON" disabled={!pythonDisponivel}>
+                    {pythonDisponivel
+                      ? `Motor Python do órgão${configMotor?.versao_servico ? ` · ${configMotor.versao_servico}` : ""}`
+                      : "Motor Python do órgão · serviço indisponível"}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              {!pythonDisponivel ? (
+                <p className="text-xs text-muted-foreground">
+                  Para usar o motor Python, o administrador informa o endereço do serviço em
+                  Configurações e confirma a conexão.
+                </p>
+              ) : null}
+              {leitura ? (
+                <p className="text-xs text-muted-foreground">
+                  Última leitura pelo{" "}
+                  {leitura.motor === "PYTHON" ? "motor Python do órgão" : "motor interno"}
+                  {leitura.versao ? ` (${leitura.versao})` : ""}
+                  {leitura.duracao ? ` em ${(leitura.duracao / 1000).toFixed(1)}s` : ""}.
+                </p>
+              ) : null}
+            </div>
             <div className="flex flex-wrap items-end gap-2">
               <Button disabled={ocupado || !documentoId} onClick={() => void extrair()}>
                 {ocupado ? "Processando..." : "Extrair itens"}
