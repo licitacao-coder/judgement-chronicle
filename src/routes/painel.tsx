@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { obterConfigMotor } from "@/lib/motores.functions";
 import { processarDocumento } from "@/lib/pipeline.functions";
 import {
   extrairItensAceitos,
@@ -98,6 +99,25 @@ function PaginaPainel() {
   const [previa, setPrevia] = useState<Registro[] | null>(null);
   const [ocupado, setOcupado] = useState(false);
   const [detalhe, setDetalhe] = useState<Registro | null>(null);
+  const [motor, setMotor] = useState<"INTERNO" | "PYTHON">("INTERNO");
+  const [leitura, setLeitura] = useState<{
+    motor: "INTERNO" | "PYTHON";
+    versao: string | null;
+    duracao: number | null;
+  } | null>(null);
+
+  const { data: configMotor } = useQuery({
+    queryKey: ["configuracao_motor"],
+    queryFn: () => obterConfigMotor(),
+  });
+  const pythonDisponivel =
+    !!configMotor?.endereco_servico && configMotor.situacao === "ATIVO";
+
+  useEffect(() => {
+    if (configMotor?.motor_padrao === "PYTHON" && pythonDisponivel) setMotor("PYTHON");
+  }, [configMotor?.motor_padrao, pythonDisponivel]);
+
+
 
   const [busca, setBusca] = useState("");
   const [filtroItem, setFiltroItem] = useState("");
@@ -311,23 +331,41 @@ function PaginaPainel() {
     }
   }
 
-  async function extrair(idDocumento?: string) {
+  async function extrair(idDocumento?: string, motorForcado?: "INTERNO" | "PYTHON") {
     const alvo = idDocumento ?? documentoId;
     if (!alvo) {
       toast.error("Selecione o Termo de Julgamento.");
       return;
     }
+    const motorUsado = motorForcado ?? motor;
     setOcupado(true);
     try {
-      const resultado = await extrairItensAceitos({ data: { documentoId: alvo } });
+      const resultado = await extrairItensAceitos({
+        data: { documentoId: alvo, motor: motorUsado },
+      });
       setPrevia(resultado.itens);
+      setLeitura({
+        motor: resultado.motor,
+        versao: resultado.motorVersao ?? null,
+        duracao: resultado.duracaoMs ?? null,
+      });
       toast.success(
         `${resultado.itens.length} item(ns) aceitos e habilitados localizados em ${resultado.totalBlocos} item(ns) analisados.`,
       );
     } catch (e) {
-      toast.error("Falha na extração", {
-        description: e instanceof Error ? e.message : String(e),
-      });
+      const descricao = e instanceof Error ? e.message : String(e);
+      if (motorUsado === "PYTHON") {
+        toast.error("O serviço Python não concluiu a leitura", {
+          description: descricao,
+          action: {
+            label: "Refazer no motor interno",
+            onClick: () => void extrair(alvo, "INTERNO"),
+          },
+          duration: 12000,
+        });
+      } else {
+        toast.error("Falha na extração", { description: descricao });
+      }
     } finally {
       setOcupado(false);
     }
@@ -342,6 +380,9 @@ function PaginaPainel() {
           documentoId,
           processoId: processoId || null,
           identificacaoProcesso: identificacaoProcesso || null,
+          motor: leitura?.motor ?? "INTERNO",
+          motorVersao: leitura?.versao ?? null,
+          duracaoMs: leitura?.duracao ?? null,
           itens: previa as unknown as Record<string, unknown>[],
         },
       });
@@ -528,6 +569,36 @@ function PaginaPainel() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="grid gap-2">
+              <span className="label-field">Motor de leitura</span>
+              <Select value={motor} onValueChange={(v) => setMotor(v as "INTERNO" | "PYTHON")}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="INTERNO">Motor interno (padrão)</SelectItem>
+                  <SelectItem value="PYTHON" disabled={!pythonDisponivel}>
+                    {pythonDisponivel
+                      ? `Motor Python do órgão${configMotor?.versao_servico ? ` · ${configMotor.versao_servico}` : ""}`
+                      : "Motor Python do órgão · serviço indisponível"}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              {!pythonDisponivel ? (
+                <p className="text-xs text-muted-foreground">
+                  Para usar o motor Python, o administrador informa o endereço do serviço em
+                  Configurações e confirma a conexão.
+                </p>
+              ) : null}
+              {leitura ? (
+                <p className="text-xs text-muted-foreground">
+                  Última leitura pelo{" "}
+                  {leitura.motor === "PYTHON" ? "motor Python do órgão" : "motor interno"}
+                  {leitura.versao ? ` (${leitura.versao})` : ""}
+                  {leitura.duracao ? ` em ${(leitura.duracao / 1000).toFixed(1)}s` : ""}.
+                </p>
+              ) : null}
             </div>
             <div className="flex flex-wrap items-end gap-2">
               <Button disabled={ocupado || !documentoId} onClick={() => void extrair()}>
