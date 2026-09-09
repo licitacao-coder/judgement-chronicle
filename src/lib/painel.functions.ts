@@ -489,6 +489,9 @@ export const extrairItensAceitos = createServerFn({ method: "POST" })
       nomeDocumento: doc.nome_original,
       totalBlocos: blocos.length,
       itens,
+      motor: "INTERNO" as const,
+      motorVersao: "interno-1",
+      duracaoMs: Date.now() - inicio,
     };
   });
 
