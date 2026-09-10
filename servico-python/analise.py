@@ -344,7 +344,9 @@ def frases_do_texto(texto: str) -> list[tuple[str, int]]:
     for bloco in re.finditer(r"[^\n]{20,}", texto):
         trecho = bloco.group(0)
         base = bloco.start()
-        for parte in re.finditer(r".{20,}?(?:[.;](?=\s|$)|$)", trecho):
+        # Não quebra em abreviações usuais (art., inc., n., Lei n., §, Sr.).
+        padrao = r".{20,}?(?:(?<!\bart)(?<!\binc)(?<!\bn)(?<!\bsr)(?<!\bsra)(?<!\bparágr)[.;](?=\s|$)|$)"
+        for parte in re.finditer(padrao, trecho, re.I):
             frase = normalizar(parte.group(0))
             if len(frase) >= 20:
                 resultado.append((frase, base + parte.start()))
