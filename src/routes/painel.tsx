@@ -594,8 +594,8 @@ function PaginaPainel() {
 
               {leitura ? (
                 <p className="text-xs text-muted-foreground">
-                  Última leitura pelo{" "}
-                  {leitura.motor === "PYTHON" ? "motor Python do órgão" : "motor interno"}
+                  Última leitura: {leitura.motor === "PYTHON" ? "Local" : "IA"}
+
                   {leitura.versao ? ` (${leitura.versao})` : ""}
                   {leitura.duracao ? ` em ${(leitura.duracao / 1000).toFixed(1)}s` : ""}.
                 </p>
