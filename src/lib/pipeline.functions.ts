@@ -30,7 +30,14 @@ const somenteDigitos = (v: unknown) => (limpo(v) ?? "").replace(/\D/g, "");
 
 export const processarDocumento = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) => z.object({ documentoId: z.string().uuid() }).parse(data))
+  .inputValidator((data) =>
+    z
+      .object({
+        documentoId: z.string().uuid(),
+        motor: z.enum(["INTERNO", "PYTHON"]).optional(),
+      })
+      .parse(data),
+  )
   .handler(async ({ data, context }) => {
     const supabase = context.supabase;
 
