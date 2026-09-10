@@ -355,12 +355,13 @@ function PaginaPainel() {
     } catch (e) {
       const descricao = e instanceof Error ? e.message : String(e);
       if (motorUsado === "PYTHON") {
-        toast.error("O serviço Python não concluiu a leitura", {
+        toast.error("A leitura Local não foi concluída", {
           description: descricao,
           action: {
-            label: "Refazer no motor interno",
+            label: "Refazer com IA",
             onClick: () => void extrair(alvo, "INTERNO"),
           },
+
           duration: 12000,
         });
       } else {
