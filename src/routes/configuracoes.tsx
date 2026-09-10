@@ -264,11 +264,6 @@ function Configuracoes() {
                     placeholder="https://leitura.orgao.gov.br"
                   />
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  A escolha entre <span className="font-medium">Usar IA</span> e{" "}
-                  <span className="font-medium">Usar Local</span> é feita na tela Itens aceitos, a
-                  cada análise.
-                </p>
 
                 <div className="grid gap-2">
                   <Label>Observações</Label>
