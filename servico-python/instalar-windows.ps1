@@ -6,25 +6,19 @@ $ErrorActionPreference = "Stop"
 $pasta = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $pasta
 
-Write-Host "1/5 Verificando o Python 3.12..." -ForegroundColor Cyan
-$python = $null
-if (Get-Command py -ErrorAction SilentlyContinue) {
-  & py -3.12 --version 2>$null
-  if ($LASTEXITCODE -eq 0) { $python = "py"; $argsPy = @("-3.12") }
+Write-Host "1/5 Verificando o Python (3.12 ou mais novo)..." -ForegroundColor Cyan
+& python --version
+if ($LASTEXITCODE -ne 0) {
+  throw "Python nao encontrado. Instale com: winget install -e --id Python.Python.3.13"
 }
-if (-not $python) {
-  & python --version
-  if ($LASTEXITCODE -ne 0) {
-    throw "Python nao encontrado. Instale com: winget install -e --id Python.Python.3.12"
-  }
-  $versao = (& python -c "import sys;print('%d.%d'%sys.version_info[:2])")
-  if ($versao -ne "3.12") {
-    Write-Host "   Python $versao encontrado. As bibliotecas de leitura exigem o 3.12." -ForegroundColor Yellow
-    Write-Host "   Instale com:  winget install -e --id Python.Python.3.12" -ForegroundColor Yellow
-    throw "Instale o Python 3.12 e execute este script novamente."
-  }
-  $python = "python"; $argsPy = @()
+$versao = (& python -c "import sys;print('%d.%d'%sys.version_info[:2])")
+$partes = $versao.Split('.')
+if ([int]$partes[0] -lt 3 -or ([int]$partes[0] -eq 3 -and [int]$partes[1] -lt 12)) {
+  Write-Host "   Python $versao encontrado. E necessario 3.12 ou mais novo." -ForegroundColor Yellow
+  throw "Instale o Python 3.13 e execute este script novamente."
 }
+Write-Host "   Python $versao OK." -ForegroundColor Green
+$python = "python"; $argsPy = @()
 
 Write-Host "2/5 Criando o ambiente isolado..." -ForegroundColor Cyan
 if (-not (Test-Path ".\ambiente")) { & $python @argsPy -m venv ambiente }
