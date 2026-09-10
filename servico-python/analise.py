@@ -146,7 +146,7 @@ def extrair_licitantes(texto: str) -> list[dict[str, Any]]:
             volta,
         )
         if candidatos:
-            razao = normalizar(candidatos[-1])
+            razao = re.sub(r"[\s,.-]*(CNPJ|CPF)\s*$", "", normalizar(candidatos[-1]), flags=re.I)
         else:
             rotulado = re.search(
                 r"(?:Fornecedor|Licitante|Empresa|Raz[ãa]o\s+social)\s*:?\s*([^\n:]{5,120})$",
@@ -344,7 +344,7 @@ def frases_do_texto(texto: str) -> list[tuple[str, int]]:
     for bloco in re.finditer(r"[^\n]{20,}", texto):
         trecho = bloco.group(0)
         base = bloco.start()
-        for parte in re.finditer(r"[^.;•]{20,}[.;]?", trecho):
+        for parte in re.finditer(r".{20,}?(?:[.;](?=\s|$)|$)", trecho):
             frase = normalizar(parte.group(0))
             if len(frase) >= 20:
                 resultado.append((frase, base + parte.start()))
@@ -556,6 +556,9 @@ def redigir(dados: dict[str, Any]) -> dict[str, str]:
         if not mensagem:
             continue
         marcador = ""
+        if re.match(r"^(Em|[ÀA]s)\s", mensagem, re.I) or re.match(r"^\d{2}/\d{2}/\d{4}", mensagem):
+            partes.append(mensagem.rstrip(".") + ".")
+            continue
         if data and hora:
             marcador = f"Em {data}, às {hora}, "
         elif data:
