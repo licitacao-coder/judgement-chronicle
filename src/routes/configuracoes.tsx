@@ -236,10 +236,20 @@ function Configuracoes() {
               </CardHeader>
               <CardContent className="grid gap-4">
                 <p className="text-sm text-muted-foreground">
-                  O motor interno é usado por padrão e não depende de nada externo. O motor do órgão
-                  é um serviço próprio, instalado por vocês, capaz de ler documentos digitalizados
-                  como imagem. Quem analisa pode escolher o motor a cada documento.
+                  Esta aba serve apenas para cadastrar o serviço próprio do órgão (leitura local).
+                  Nenhuma configuração é necessária para usar a IA: ela já está pronta e é a opção
+                  padrão.
                 </p>
+                <div className="rounded-md border border-border/60 bg-muted/40 p-3 text-sm">
+                  <p className="font-medium">Onde escolher entre IA e leitura local</p>
+                  <p className="mt-1 text-muted-foreground">
+                    Na tela <span className="font-medium">Itens aceitos</span>, antes de enviar o
+                    Termo de Julgamento, existe um seletor com duas opções:{" "}
+                    <span className="font-medium">Usar IA</span> (funciona sempre, sem instalação) e{" "}
+                    <span className="font-medium">Usar Local</span> (só fica disponível depois que o
+                    endereço abaixo estiver salvo e respondendo ao teste de conexão).
+                  </p>
+                </div>
                 <p className="text-xs text-muted-foreground">
                   O passo a passo de instalação no Windows está no arquivo
                   {" "}
@@ -254,11 +264,6 @@ function Configuracoes() {
                     placeholder="https://leitura.orgao.gov.br"
                   />
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  A escolha entre <span className="font-medium">Usar IA</span> e{" "}
-                  <span className="font-medium">Usar Local</span> é feita na tela Itens aceitos, a
-                  cada análise.
-                </p>
 
                 <div className="grid gap-2">
                   <Label>Observações</Label>
