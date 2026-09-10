@@ -63,7 +63,35 @@ export const processarDocumento = createServerFn({ method: "POST" })
       let texto = "";
       let paginas = 1;
 
-      if (doc.extensao === "pdf") {
+      if (data.motor === "PYTHON") {
+        const { data: config } = await supabase
+          .from("configuracao_motor")
+          .select("endereco_servico")
+          .order("created_at", { ascending: true })
+          .limit(1)
+          .maybeSingle();
+        if (!config?.endereco_servico) {
+          throw new Error(
+            "O serviço de leitura local não está configurado. Cadastre o endereço em Configurações → Motores de análise.",
+          );
+        }
+        const { chamarServicoPython } = await import("./motores/motorPython.server");
+        const { z: zod } = await import("zod");
+        let bruto = "";
+        for (const b of bytes) bruto += String.fromCharCode(b);
+        const resposta = await chamarServicoPython(
+          config.endereco_servico,
+          "/texto",
+          {
+            nome_documento: doc.nome_original,
+            extensao: doc.extensao,
+            arquivo_base64: btoa(bruto),
+          },
+          zod.object({ versao: zod.string(), texto: zod.string() }),
+        );
+        texto = resposta.texto;
+        paginas = (texto.match(/---\s*P[áa]gina\s+\d+\s*---/gi) ?? []).length || 1;
+      } else if (doc.extensao === "pdf") {
         const { extractText, getDocumentProxy } = await import("unpdf");
         const pdf = await getDocumentProxy(bytes);
         const resultado = await extractText(pdf, { mergePages: false });
