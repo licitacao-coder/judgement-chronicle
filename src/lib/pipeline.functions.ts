@@ -172,26 +172,54 @@ export const processarDocumento = createServerFn({ method: "POST" })
 
 export const analisarDocumento = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) => z.object({ documentoId: z.string().uuid() }).parse(data))
+  .inputValidator((data) =>
+    z
+      .object({
+        documentoId: z.string().uuid(),
+        motor: z.enum(["INTERNO", "PYTHON"]).optional(),
+      })
+      .parse(data),
+  )
   .handler(async ({ data, context }) => {
     const supabase = context.supabase;
     const userId = context.userId;
 
     const { data: doc } = await supabase
       .from("documentos")
-      .select("id, texto_extraido")
+      .select("id, nome_original, extensao, texto_extraido")
       .eq("id", data.documentoId)
       .single();
     if (!doc?.texto_extraido) throw new Error("O documento ainda não possui texto extraído.");
 
-    const resposta = await chamarIA(
-      [
-        { role: "system", content: "Responda exclusivamente com JSON válido." },
-        { role: "user", content: promptExtracao(doc.texto_extraido) },
-      ],
-      { json: true },
-    );
-    const extracao = extrairJson<Extracao>(resposta);
+    let extracao: Extracao;
+    let motorVersao: string | null = null;
+    const inicio = Date.now();
+
+    if (data.motor === "PYTHON") {
+      const endereco = await enderecoLocal(supabase as never);
+      const { analisarLocal } = await import("./motores/analiseLocal.server");
+      const local = await analisarLocal(endereco, {
+        nome: doc.nome_original,
+        extensao: doc.extensao,
+        texto: doc.texto_extraido,
+      });
+      motorVersao = local.versao;
+      extracao = {
+        processo: local.processo,
+        licitantes: local.licitantes,
+        ocorrencias: local.ocorrencias as unknown as Extracao["ocorrencias"],
+      };
+    } else {
+      const resposta = await chamarIA(
+        [
+          { role: "system", content: "Responda exclusivamente com JSON válido." },
+          { role: "user", content: promptExtracao(doc.texto_extraido) },
+        ],
+        { json: true },
+      );
+      extracao = extrairJson<Extracao>(resposta);
+    }
+    const duracaoMs = Date.now() - inicio;
     const p = extracao.processo ?? {};
 
     const { data: processo, error: erroProcesso } = await supabase
