@@ -146,3 +146,67 @@ export const testarConexaoMotor = createServerFn({ method: "POST" })
 
     return resultado;
   });
+
+/** Situação da chave da IA — nunca devolve o segredo, apenas se existe. */
+export const obterConfigIA = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const { obterChaveIA } = await import("./ia.server");
+    const { chave, modelo } = await obterChaveIA();
+    return {
+      chaveConfigurada: !!chave,
+      origem: process.env["LOVABLE_API_KEY"] ? "AMBIENTE" : chave ? "CADASTRADA" : "AUSENTE",
+      modelo,
+    };
+  });
+
+export const salvarConfigIA = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        chave: z.string().trim().max(400).nullable(),
+        modelo: z.string().trim().max(120).nullable().optional(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    await garantirAdmin(context);
+    const supabase = context.supabase;
+    const { data: existente } = await supabase
+      .from("configuracao_ia")
+      .select("id")
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    const registro: Record<string, unknown> = {
+      modelo: data.modelo && data.modelo.length > 0 ? data.modelo : null,
+      usuario_atualizacao: context.userId,
+      updated_at: new Date().toISOString(),
+    };
+    // Chave vazia mantém a chave atual; use "REMOVER" para apagar.
+    if (data.chave && data.chave.length > 0) {
+      registro["chave"] = data.chave === "REMOVER" ? null : data.chave;
+    }
+
+    if (existente) {
+      const { error } = await supabase
+        .from("configuracao_ia")
+        .update(registro)
+        .eq("id", existente.id);
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await supabase.from("configuracao_ia").insert(registro as never);
+      if (error) throw new Error(error.message);
+    }
+
+    await supabase.from("auditoria").insert({
+      usuario_id: context.userId,
+      entidade: "configuracao_ia",
+      acao: "ATUALIZACAO_CHAVE_IA",
+      valor_novo: data.chave ? "chave atualizada" : "modelo atualizado",
+    });
+
+    return { ok: true };
+  });
