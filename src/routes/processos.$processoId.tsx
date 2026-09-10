@@ -204,7 +204,9 @@ function PaginaProcesso() {
     if (!ocorrencia) return;
     setOcupado(true);
     try {
-      const r = await redigirRelato({ data: { ocorrenciaId: String(ocorrencia["id"]) } });
+      const r = await redigirRelato({
+        data: { ocorrenciaId: String(ocorrencia["id"]), motor },
+      });
       setCampos((c) => ({
         ...c,
         RELATO: r.relato || (c["RELATO"] ?? ""),

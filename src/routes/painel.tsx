@@ -307,7 +307,7 @@ function PaginaPainel() {
         .single();
       if (erroDoc || !doc) throw new Error(erroDoc?.message ?? "Falha ao registrar o documento.");
 
-      const leitura = await processarDocumento({ data: { documentoId: doc.id } });
+      const leitura = await processarDocumento({ data: { documentoId: doc.id, motor } });
       toast.success(`Leitura concluída: ${leitura.paginas} página(s).`);
       await queryClient.invalidateQueries({ queryKey: ["documentos"] });
       setDocumentoId(doc.id);
