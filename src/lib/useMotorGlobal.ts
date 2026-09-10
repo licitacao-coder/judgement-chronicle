@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { obterConfigMotor } from "@/lib/motores.functions";
+import { useAuth } from "@/lib/useAuth";
 
 export type Motor = "INTERNO" | "PYTHON";
 
