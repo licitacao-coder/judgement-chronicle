@@ -29,7 +29,7 @@ import {
 import { ETAPAS_PROCESSAMENTO } from "@/lib/dominio";
 import { processarDocumento, analisarDocumento } from "@/lib/pipeline.functions";
 import { excluirProcesso } from "@/lib/exclusao.functions";
-import { obterConfigMotor } from "@/lib/motores.functions";
+import { useMotorGlobal } from "@/lib/useMotorGlobal";
 import { useAuth } from "@/lib/useAuth";
 
 
@@ -74,7 +74,7 @@ function Painel() {
   const { ehAdministrador } = useAuth();
   const inputRef = useRef<HTMLInputElement>(null);
   const [categoria, setCategoria] = useState("TERMO_JULGAMENTO");
-  const [motor, setMotor] = useState<"INTERNO" | "PYTHON">("INTERNO");
+  const { motor, localDisponivel } = useMotorGlobal();
   const [etapa, setEtapa] = useState(-1);
   const [processando, setProcessando] = useState(false);
   const [excluindo, setExcluindo] = useState<string | null>(null);
@@ -107,12 +107,6 @@ function Painel() {
     },
   });
 
-  const { data: configMotor } = useQuery({
-    queryKey: ["configuracao_motor"],
-    queryFn: () => obterConfigMotor(),
-  });
-  const localDisponivel =
-    !!configMotor?.endereco_servico && configMotor.situacao === "ATIVO";
 
 
 
