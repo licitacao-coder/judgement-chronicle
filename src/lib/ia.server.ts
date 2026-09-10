@@ -3,16 +3,32 @@ const MODELO_PADRAO = "google/gemini-3.1-pro-preview";
 
 export type Mensagem = { role: "system" | "user"; content: string };
 
+/** Chave da IA: primeiro a do ambiente, depois a cadastrada em Configurações. */
+export async function obterChaveIA(): Promise<{ chave: string | null; modelo: string | null }> {
+  const doAmbiente = process.env["LOVABLE_API_KEY"];
+  if (doAmbiente) return { chave: doAmbiente, modelo: null };
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin
+    .from("configuracao_ia")
+    .select("chave, modelo")
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  const chave = data?.chave?.trim();
+  return { chave: chave && chave.length > 0 ? chave : null, modelo: data?.modelo ?? null };
+}
+
 export async function chamarIA(
   mensagens: Mensagem[],
   opcoes?: { json?: boolean; modelo?: string },
 ): Promise<string> {
-  const chave = process.env["LOVABLE_API_KEY"];
+  const { chave, modelo } = await obterChaveIA();
   if (!chave) {
     throw new Error(
-      "A inteligência artificial não está configurada neste projeto (chave ausente).",
+      "A chave da inteligência artificial não está cadastrada. Em Configurações → Motores de análise, informe a chave da IA, ou escolha “Usar Local” para ler o documento pelo serviço do órgão.",
     );
   }
+
 
   const resposta = await fetch(ENDPOINT, {
     method: "POST",
