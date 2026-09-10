@@ -37,7 +37,7 @@ export async function chamarIA(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: opcoes?.modelo ?? MODELO_PADRAO,
+      model: opcoes?.modelo ?? modelo ?? MODELO_PADRAO,
       messages: mensagens,
       ...(opcoes?.json ? { response_format: { type: "json_object" } } : {}),
     }),
