@@ -340,19 +340,34 @@ export const analisarDocumento = createServerFn({ method: "POST" })
 
     await supabase
       .from("documentos")
-      .update({ status_processamento: "ANALISADO" })
+      .update({
+        status_processamento: "ANALISADO",
+        motor: data.motor ?? "INTERNO",
+        motor_versao: motorVersao,
+        duracao_ms: duracaoMs,
+      })
       .eq("id", doc.id);
 
     return {
       processoId: processo.id,
       licitantes: mapaLicitantes.size,
       ocorrencias: totalOcorrencias,
+      motor: data.motor ?? "INTERNO",
+      motorVersao,
+      duracaoMs,
     };
   });
 
 export const redigirRelato = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) => z.object({ ocorrenciaId: z.string().uuid() }).parse(data))
+  .inputValidator((data) =>
+    z
+      .object({
+        ocorrenciaId: z.string().uuid(),
+        motor: z.enum(["INTERNO", "PYTHON"]).optional(),
+      })
+      .parse(data),
+  )
   .handler(async ({ data, context }) => {
     const supabase = context.supabase;
 
