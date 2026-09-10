@@ -27,7 +27,7 @@ if (-not $python) {
 }
 
 Write-Host "2/5 Criando o ambiente isolado..." -ForegroundColor Cyan
-if (-not (Test-Path ".\ambiente")) { & $python -m venv ambiente }
+if (-not (Test-Path ".\ambiente")) { & $python @argsPy -m venv ambiente }
 $py = ".\ambiente\Scripts\python.exe"
 
 Write-Host "3/5 Instalando as bibliotecas..." -ForegroundColor Cyan
