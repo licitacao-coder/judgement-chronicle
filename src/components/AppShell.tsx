@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useAuth } from "@/lib/useAuth";
 import { Button } from "@/components/ui/button";
 import { AlterarSenha } from "@/components/AlterarSenha";
+import { SeletorMotor } from "@/components/SeletorMotor";
 
 export function AppShell({
   children,
@@ -70,6 +71,8 @@ export function AppShell({
                 </>
               ) : null}
             </nav>
+
+            <SeletorMotor />
 
             <div className="text-right text-xs text-sidebar-foreground/80">
               <p>{perfil?.nome ?? user.email}</p>
