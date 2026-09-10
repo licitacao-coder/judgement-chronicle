@@ -254,21 +254,12 @@ function Configuracoes() {
                     placeholder="https://leitura.orgao.gov.br"
                   />
                 </div>
-                <div className="grid gap-2">
-                  <Label>Motor usado por padrão</Label>
-                  <Select
-                    value={motorPadrao}
-                    onValueChange={(v) => setMotorPadrao(v as "INTERNO" | "PYTHON")}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="INTERNO">Motor interno</SelectItem>
-                      <SelectItem value="PYTHON">Serviço do órgão</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <p className="text-xs text-muted-foreground">
+                  A escolha entre <span className="font-medium">Usar IA</span> e{" "}
+                  <span className="font-medium">Usar Local</span> é feita na tela Itens aceitos, a
+                  cada análise.
+                </p>
+
                 <div className="grid gap-2">
                   <Label>Observações</Label>
                   <Textarea
