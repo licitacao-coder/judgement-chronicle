@@ -59,6 +59,33 @@ export type Database = {
         }
         Relationships: []
       }
+      configuracao_ia: {
+        Row: {
+          chave: string | null
+          created_at: string
+          id: string
+          modelo: string | null
+          updated_at: string
+          usuario_atualizacao: string | null
+        }
+        Insert: {
+          chave?: string | null
+          created_at?: string
+          id?: string
+          modelo?: string | null
+          updated_at?: string
+          usuario_atualizacao?: string | null
+        }
+        Update: {
+          chave?: string | null
+          created_at?: string
+          id?: string
+          modelo?: string | null
+          updated_at?: string
+          usuario_atualizacao?: string | null
+        }
+        Relationships: []
+      }
       configuracao_motor: {
         Row: {
           created_at: string

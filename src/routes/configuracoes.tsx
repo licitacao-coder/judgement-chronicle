@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/select";
 import { placeholdersTemplate } from "@/lib/admin.functions";
 import {
+  obterConfigIA,
+  salvarConfigIA,
   obterConfigMotor,
   salvarConfigMotor,
   testarConexaoMotor,
@@ -110,6 +112,32 @@ function Configuracoes() {
   const [motorPadrao, setMotorPadrao] = useState<"INTERNO" | "PYTHON">("INTERNO");
   const [obsMotor, setObsMotor] = useState("");
   const [ocupadoMotor, setOcupadoMotor] = useState(false);
+  const [chaveIA, setChaveIA] = useState("");
+  const [modeloIA, setModeloIA] = useState("");
+  const [ocupadoIA, setOcupadoIA] = useState(false);
+
+  const { data: configIA } = useQuery({
+    queryKey: ["configuracao_ia"],
+    queryFn: () => obterConfigIA(),
+  });
+
+  async function salvarIA() {
+    setOcupadoIA(true);
+    try {
+      await salvarConfigIA({
+        data: { chave: chaveIA.trim() || null, modelo: modeloIA.trim() || null },
+      });
+      setChaveIA("");
+      toast.success("Configuração da IA salva.");
+      await queryClient.invalidateQueries({ queryKey: ["configuracao_ia"] });
+    } catch (e) {
+      toast.error("Não foi possível salvar", {
+        description: e instanceof Error ? e.message : String(e),
+      });
+    } finally {
+      setOcupadoIA(false);
+    }
+  }
 
   const { data: configMotor } = useQuery({
     queryKey: ["configuracao_motor"],
@@ -230,6 +258,54 @@ function Configuracoes() {
           </TabsList>
 
           <TabsContent value="motores" className="space-y-4">
+            <Card className="panel">
+              <CardHeader>
+                <CardTitle className="text-base">Chave da inteligência artificial</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-4">
+                <p className="text-sm text-muted-foreground">
+                  Guarde aqui a chave usada nas análises por IA. No aplicativo publicado ela já vem
+                  configurada; na cópia executada no seu computador é preciso cadastrá-la.
+                </p>
+                <div className="grid gap-2 sm:max-w-md">
+                  <Label>Chave da IA</Label>
+                  <Input
+                    type="password"
+                    value={chaveIA}
+                    onChange={(e) => setChaveIA(e.target.value)}
+                    placeholder={
+                      configIA?.chaveConfigurada
+                        ? "Chave guardada — preencha só para substituir"
+                        : "Cole a chave aqui"
+                    }
+                  />
+                </div>
+                <div className="grid gap-2 sm:max-w-md">
+                  <Label>Modelo (opcional)</Label>
+                  <Input
+                    value={modeloIA}
+                    onChange={(e) => setModeloIA(e.target.value)}
+                    placeholder="google/gemini-3.1-pro-preview"
+                  />
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button onClick={() => void salvarIA()} disabled={ocupadoIA}>
+                    {ocupadoIA ? "Salvando..." : "Salvar chave da IA"}
+                  </Button>
+                  <Badge variant={configIA?.chaveConfigurada ? "default" : "secondary"}>
+                    {configIA?.origem === "AMBIENTE"
+                      ? "Configurada no aplicativo"
+                      : configIA?.chaveConfigurada
+                        ? "Chave cadastrada"
+                        : "Sem chave"}
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  A chave nunca é exibida de volta. Para apagá-la, digite REMOVER no campo e salve.
+                </p>
+              </CardContent>
+            </Card>
+
             <Card className="panel">
               <CardHeader>
                 <CardTitle className="text-base">Motores de leitura dos documentos</CardTitle>
