@@ -6,15 +6,28 @@ $ErrorActionPreference = "Stop"
 $pasta = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $pasta
 
-Write-Host "1/5 Verificando o Python..." -ForegroundColor Cyan
-$python = "python"
-& $python --version
-if ($LASTEXITCODE -ne 0) {
-  throw "Python nao encontrado. Instale em https://www.python.org/downloads/windows/ marcando 'Add python.exe to PATH'."
+Write-Host "1/5 Verificando o Python 3.12..." -ForegroundColor Cyan
+$python = $null
+if (Get-Command py -ErrorAction SilentlyContinue) {
+  & py -3.12 --version 2>$null
+  if ($LASTEXITCODE -eq 0) { $python = "py"; $argsPy = @("-3.12") }
+}
+if (-not $python) {
+  & python --version
+  if ($LASTEXITCODE -ne 0) {
+    throw "Python nao encontrado. Instale com: winget install -e --id Python.Python.3.12"
+  }
+  $versao = (& python -c "import sys;print('%d.%d'%sys.version_info[:2])")
+  if ($versao -ne "3.12") {
+    Write-Host "   Python $versao encontrado. As bibliotecas de leitura exigem o 3.12." -ForegroundColor Yellow
+    Write-Host "   Instale com:  winget install -e --id Python.Python.3.12" -ForegroundColor Yellow
+    throw "Instale o Python 3.12 e execute este script novamente."
+  }
+  $python = "python"; $argsPy = @()
 }
 
 Write-Host "2/5 Criando o ambiente isolado..." -ForegroundColor Cyan
-if (-not (Test-Path ".\ambiente")) { & $python -m venv ambiente }
+if (-not (Test-Path ".\ambiente")) { & $python @argsPy -m venv ambiente }
 $py = ".\ambiente\Scripts\python.exe"
 
 Write-Host "3/5 Instalando as bibliotecas..." -ForegroundColor Cyan
