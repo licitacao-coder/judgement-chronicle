@@ -28,6 +28,32 @@ const limpo = (v: unknown): string | null => {
 
 const somenteDigitos = (v: unknown) => (limpo(v) ?? "").replace(/\D/g, "");
 
+/** Endereço do serviço local; erro claro quando ainda não foi cadastrado. */
+async function enderecoLocal(supabase: {
+  from: (t: string) => {
+    select: (c: string) => {
+      order: (
+        c: string,
+        o: { ascending: boolean },
+      ) => { limit: (n: number) => { maybeSingle: () => Promise<{ data: unknown }> } };
+    };
+  };
+}): Promise<string> {
+  const { data } = await supabase
+    .from("configuracao_motor")
+    .select("endereco_servico")
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  const endereco = (data as { endereco_servico?: string | null } | null)?.endereco_servico;
+  if (!endereco) {
+    throw new Error(
+      "O serviço local não está configurado. Em Configurações → Motores de análise, informe o endereço do serviço do órgão, ou escolha “Usar IA”.",
+    );
+  }
+  return endereco;
+}
+
 export const processarDocumento = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
