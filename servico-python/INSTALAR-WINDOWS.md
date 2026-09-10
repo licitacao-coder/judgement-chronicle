@@ -26,6 +26,21 @@ Feche e abra o PowerShell novamente para os programas entrarem no caminho do sis
 Baixe o projeto (botão de download do código no Lovable ou o repositório do GitHub) e
 copie a pasta `servico-python` para um local fixo, por exemplo `C:\leitura-documentos`.
 
+> **Importante:** use o Python 3.12. Se você já instalou o Python 3.14, as bibliotecas
+> de leitura ainda não têm versão pronta para ele e a instalação falha com mensagens
+> sobre `pydantic-core` e `Pillow`. Crie o ambiente apontando o 3.12:
+>
+> ```powershell
+> Remove-Item -Recurse -Force .\.venv, .\ambiente -ErrorAction SilentlyContinue
+> py -3.12 -m venv .venv
+> .\.venv\Scripts\Activate.ps1
+> python -m pip install --upgrade pip
+> python -m pip install -r requirements.txt
+> python -m uvicorn main:app --host 127.0.0.1 --port 8000
+> ```
+>
+> Se `py -3.12` não existir, instale com `winget install -e --id Python.Python.3.12`.
+
 ## 3. Definir a chave de acesso e iniciar
 
 No PowerShell, dentro da pasta:
