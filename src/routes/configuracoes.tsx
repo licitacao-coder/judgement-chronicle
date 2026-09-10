@@ -317,13 +317,14 @@ function Configuracoes() {
                   padrão.
                 </p>
                 <div className="rounded-md border border-border/60 bg-muted/40 p-3 text-sm">
-                  <p className="font-medium">Onde escolher entre IA e leitura local</p>
+                  <p className="font-medium">Onde escolher entre IA e serviço local</p>
                   <p className="mt-1 text-muted-foreground">
-                    Na tela <span className="font-medium">Itens aceitos</span>, antes de enviar o
-                    Termo de Julgamento, existe um seletor com duas opções:{" "}
-                    <span className="font-medium">Usar IA</span> (funciona sempre, sem instalação) e{" "}
-                    <span className="font-medium">Usar Local</span> (só fica disponível depois que o
-                    endereço abaixo estiver salvo e respondendo ao teste de conexão).
+                    No alto de qualquer tela, ao lado do seu nome, existe um seletor único com duas
+                    opções: <span className="font-medium">Usar IA</span> (funciona sempre, sem
+                    instalação) e <span className="font-medium">Usar Local</span> (só fica
+                    disponível depois que o endereço abaixo estiver salvo e respondendo ao teste de
+                    conexão). A escolha vale para tudo: leitura do documento, licitantes,
+                    ocorrências, linha do tempo, itens aceitos e redação do relatório.
                   </p>
                 </div>
                 <p className="text-xs text-muted-foreground">
