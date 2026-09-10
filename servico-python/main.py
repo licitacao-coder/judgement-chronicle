@@ -9,6 +9,8 @@ Rotas:
   GET  /situacao        -> versão do serviço e se o OCR está disponível
   POST /itens-aceitos   -> itens "Aceito e Habilitado" do Termo de Julgamento
   POST /texto           -> texto integral do documento (para o relatório)
+  POST /analise         -> certame, licitantes, ocorrências e linha do tempo
+  POST /redacao         -> relato, providências e repercussão
 """
 
 from __future__ import annotations
@@ -20,9 +22,12 @@ import shutil
 from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
 
+from typing import Any
+
+from analise import analisar, redigir
 from extracao import extrair_itens, ler_texto_pdf, ler_texto_ocr
 
-VERSAO = "python-1.0.0"
+VERSAO = "python-1.1.0"
 CHAVE = os.environ.get("CHAVE_SERVICO", "")
 TAMANHO_MAXIMO_MB = int(os.environ.get("TAMANHO_MAXIMO_MB", "40"))
 
