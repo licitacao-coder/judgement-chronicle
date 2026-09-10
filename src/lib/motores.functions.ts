@@ -180,14 +180,14 @@ export const salvarConfigIA = createServerFn({ method: "POST" })
       .limit(1)
       .maybeSingle();
 
-    const registro: Record<string, unknown> = {
+    const registro: { modelo: string | null; usuario_atualizacao: string; updated_at: string; chave?: string | null } = {
       modelo: data.modelo && data.modelo.length > 0 ? data.modelo : null,
       usuario_atualizacao: context.userId,
       updated_at: new Date().toISOString(),
     };
     // Chave vazia mantém a chave atual; use "REMOVER" para apagar.
     if (data.chave && data.chave.length > 0) {
-      registro["chave"] = data.chave === "REMOVER" ? null : data.chave;
+      registro.chave = data.chave === "REMOVER" ? null : data.chave;
     }
 
     if (existente) {
@@ -197,7 +197,7 @@ export const salvarConfigIA = createServerFn({ method: "POST" })
         .eq("id", existente.id);
       if (error) throw new Error(error.message);
     } else {
-      const { error } = await supabase.from("configuracao_ia").insert(registro as never);
+      const { error } = await supabase.from("configuracao_ia").insert(registro);
       if (error) throw new Error(error.message);
     }
 
