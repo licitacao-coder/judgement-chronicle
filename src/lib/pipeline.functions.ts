@@ -28,6 +28,32 @@ const limpo = (v: unknown): string | null => {
 
 const somenteDigitos = (v: unknown) => (limpo(v) ?? "").replace(/\D/g, "");
 
+/** Endereço do serviço local; erro claro quando ainda não foi cadastrado. */
+async function enderecoLocal(supabase: {
+  from: (t: string) => {
+    select: (c: string) => {
+      order: (
+        c: string,
+        o: { ascending: boolean },
+      ) => { limit: (n: number) => { maybeSingle: () => Promise<{ data: unknown }> } };
+    };
+  };
+}): Promise<string> {
+  const { data } = await supabase
+    .from("configuracao_motor")
+    .select("endereco_servico")
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  const endereco = (data as { endereco_servico?: string | null } | null)?.endereco_servico;
+  if (!endereco) {
+    throw new Error(
+      "O serviço local não está configurado. Em Configurações → Motores de análise, informe o endereço do serviço do órgão, ou escolha “Usar IA”.",
+    );
+  }
+  return endereco;
+}
+
 export const processarDocumento = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
@@ -146,26 +172,54 @@ export const processarDocumento = createServerFn({ method: "POST" })
 
 export const analisarDocumento = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) => z.object({ documentoId: z.string().uuid() }).parse(data))
+  .inputValidator((data) =>
+    z
+      .object({
+        documentoId: z.string().uuid(),
+        motor: z.enum(["INTERNO", "PYTHON"]).optional(),
+      })
+      .parse(data),
+  )
   .handler(async ({ data, context }) => {
     const supabase = context.supabase;
     const userId = context.userId;
 
     const { data: doc } = await supabase
       .from("documentos")
-      .select("id, texto_extraido")
+      .select("id, nome_original, extensao, texto_extraido")
       .eq("id", data.documentoId)
       .single();
     if (!doc?.texto_extraido) throw new Error("O documento ainda não possui texto extraído.");
 
-    const resposta = await chamarIA(
-      [
-        { role: "system", content: "Responda exclusivamente com JSON válido." },
-        { role: "user", content: promptExtracao(doc.texto_extraido) },
-      ],
-      { json: true },
-    );
-    const extracao = extrairJson<Extracao>(resposta);
+    let extracao: Extracao;
+    let motorVersao: string | null = null;
+    const inicio = Date.now();
+
+    if (data.motor === "PYTHON") {
+      const endereco = await enderecoLocal(supabase as never);
+      const { analisarLocal } = await import("./motores/analiseLocal.server");
+      const local = await analisarLocal(endereco, {
+        nome: doc.nome_original,
+        extensao: doc.extensao,
+        texto: doc.texto_extraido,
+      });
+      motorVersao = local.versao;
+      extracao = {
+        processo: local.processo,
+        licitantes: local.licitantes,
+        ocorrencias: local.ocorrencias as unknown as Extracao["ocorrencias"],
+      };
+    } else {
+      const resposta = await chamarIA(
+        [
+          { role: "system", content: "Responda exclusivamente com JSON válido." },
+          { role: "user", content: promptExtracao(doc.texto_extraido) },
+        ],
+        { json: true },
+      );
+      extracao = extrairJson<Extracao>(resposta);
+    }
+    const duracaoMs = Date.now() - inicio;
     const p = extracao.processo ?? {};
 
     const { data: processo, error: erroProcesso } = await supabase
@@ -286,19 +340,34 @@ export const analisarDocumento = createServerFn({ method: "POST" })
 
     await supabase
       .from("documentos")
-      .update({ status_processamento: "ANALISADO" })
+      .update({
+        status_processamento: "ANALISADO",
+        motor: data.motor ?? "INTERNO",
+        motor_versao: motorVersao,
+        duracao_ms: duracaoMs,
+      })
       .eq("id", doc.id);
 
     return {
       processoId: processo.id,
       licitantes: mapaLicitantes.size,
       ocorrencias: totalOcorrencias,
+      motor: data.motor ?? "INTERNO",
+      motorVersao,
+      duracaoMs,
     };
   });
 
 export const redigirRelato = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) => z.object({ ocorrenciaId: z.string().uuid() }).parse(data))
+  .inputValidator((data) =>
+    z
+      .object({
+        ocorrenciaId: z.string().uuid(),
+        motor: z.enum(["INTERNO", "PYTHON"]).optional(),
+      })
+      .parse(data),
+  )
   .handler(async ({ data, context }) => {
     const supabase = context.supabase;
 
@@ -336,18 +405,42 @@ export const redigirRelato = createServerFn({ method: "POST" })
       ),
     ].join("\n");
 
-    const resposta = await chamarIA(
-      [
-        { role: "system", content: "Responda exclusivamente com JSON válido." },
-        { role: "user", content: promptRedacao(contexto) },
-      ],
-      { json: true },
-    );
-    const texto = extrairJson<{
-      relato?: string;
-      providencias?: string;
-      repercussao?: string;
-    }>(resposta);
+    let texto: { relato?: string; providencias?: string; repercussao?: string };
+
+    if (data.motor === "PYTHON") {
+      const endereco = await enderecoLocal(supabase as never);
+      const { redigirLocal } = await import("./motores/analiseLocal.server");
+      texto = await redigirLocal(endereco, {
+        certame: [
+          o.processos?.["modalidade"] ?? "",
+          o.processos?.["numero_certame"]
+            ? `nº ${o.processos["numero_certame"]}/${o.processos?.["ano_certame"] ?? ""}`
+            : "",
+        ]
+          .filter(Boolean)
+          .join(" "),
+        objeto: o.processos?.["objeto"] ?? null,
+        licitante: o.licitantes?.["razao_social"] ?? null,
+        cnpj: o.licitantes?.["cnpj_cpf"] ?? null,
+        tipo_ocorrencia: o.tipo_ocorrencia,
+        resumo: o.descricao_resumida,
+        manifestacao: o.manifestacao,
+        eventos: eventos as unknown as Record<string, unknown>[],
+      });
+    } else {
+      const resposta = await chamarIA(
+        [
+          { role: "system", content: "Responda exclusivamente com JSON válido." },
+          { role: "user", content: promptRedacao(contexto) },
+        ],
+        { json: true },
+      );
+      texto = extrairJson<{
+        relato?: string;
+        providencias?: string;
+        repercussao?: string;
+      }>(resposta);
+    }
 
     await supabase
       .from("ocorrencias")

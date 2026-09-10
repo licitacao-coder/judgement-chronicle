@@ -9,6 +9,8 @@ Rotas:
   GET  /situacao        -> versão do serviço e se o OCR está disponível
   POST /itens-aceitos   -> itens "Aceito e Habilitado" do Termo de Julgamento
   POST /texto           -> texto integral do documento (para o relatório)
+  POST /analise         -> certame, licitantes, ocorrências e linha do tempo
+  POST /redacao         -> relato, providências e repercussão
 """
 
 from __future__ import annotations
@@ -20,9 +22,12 @@ import shutil
 from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
 
+from typing import Any
+
+from analise import analisar, redigir
 from extracao import extrair_itens, ler_texto_pdf, ler_texto_ocr
 
-VERSAO = "python-1.0.0"
+VERSAO = "python-1.1.0"
 CHAVE = os.environ.get("CHAVE_SERVICO", "")
 TAMANHO_MAXIMO_MB = int(os.environ.get("TAMANHO_MAXIMO_MB", "40"))
 
@@ -109,3 +114,38 @@ def texto_documento(
     conferir_chave(x_chave_servico)
     texto, usou_ocr = obter_texto(pedido)
     return {"versao": VERSAO, "ocr_utilizado": usou_ocr, "texto": texto}
+
+
+@app.post("/analise")
+def analise_documento(
+    pedido: PedidoDocumento,
+    x_chave_servico: str | None = Header(default=None),
+) -> dict[str, Any]:
+    """Certame, licitantes, ocorrências, linha do tempo e enquadramento preliminar."""
+    conferir_chave(x_chave_servico)
+    texto, usou_ocr = obter_texto(pedido)
+    resultado = analisar(texto)
+    return {"versao": VERSAO, "ocr_utilizado": usou_ocr, **resultado}
+
+
+class PedidoRedacao(BaseModel):
+    certame: str | None = None
+    objeto: str | None = None
+    licitante: str | None = None
+    cnpj: str | None = None
+    tipo_ocorrencia: str | None = None
+    resumo: str | None = None
+    manifestacao: str | None = None
+    eventos: list[dict[str, Any]] = Field(default_factory=list)
+
+
+@app.post("/redacao")
+def redacao(
+    pedido: PedidoRedacao,
+    x_chave_servico: str | None = Header(default=None),
+) -> dict[str, Any]:
+    conferir_chave(x_chave_servico)
+    if len(pedido.eventos) > 200:
+        raise HTTPException(status_code=413, detail="Quantidade de eventos acima do limite.")
+    texto = redigir(pedido.model_dump())
+    return {"versao": VERSAO, **texto}

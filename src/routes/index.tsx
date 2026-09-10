@@ -29,7 +29,7 @@ import {
 import { ETAPAS_PROCESSAMENTO } from "@/lib/dominio";
 import { processarDocumento, analisarDocumento } from "@/lib/pipeline.functions";
 import { excluirProcesso } from "@/lib/exclusao.functions";
-import { obterConfigMotor } from "@/lib/motores.functions";
+import { useMotorGlobal } from "@/lib/useMotorGlobal";
 import { useAuth } from "@/lib/useAuth";
 
 
@@ -74,7 +74,7 @@ function Painel() {
   const { ehAdministrador } = useAuth();
   const inputRef = useRef<HTMLInputElement>(null);
   const [categoria, setCategoria] = useState("TERMO_JULGAMENTO");
-  const [motor, setMotor] = useState<"INTERNO" | "PYTHON">("INTERNO");
+  const { motor, localDisponivel } = useMotorGlobal();
   const [etapa, setEtapa] = useState(-1);
   const [processando, setProcessando] = useState(false);
   const [excluindo, setExcluindo] = useState<string | null>(null);
@@ -107,12 +107,6 @@ function Painel() {
     },
   });
 
-  const { data: configMotor } = useQuery({
-    queryKey: ["configuracao_motor"],
-    queryFn: () => obterConfigMotor(),
-  });
-  const localDisponivel =
-    !!configMotor?.endereco_servico && configMotor.situacao === "ATIVO";
 
 
 
@@ -172,7 +166,7 @@ function Painel() {
       toast.info(`Texto extraído: ${leitura.paginas} página(s).`);
 
       setEtapa(3);
-      const analise = await analisarDocumento({ data: { documentoId: doc.id } });
+      const analise = await analisarDocumento({ data: { documentoId: doc.id, motor } });
       setEtapa(6);
 
       await queryClient.invalidateQueries({ queryKey: ["processos"] });
@@ -202,28 +196,14 @@ function Painel() {
             <CardTitle className="text-base">Novo documento</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid gap-2 sm:max-w-xs">
-              <span className="label-field">Como ler o documento</span>
-              <Select
-                value={motor}
-                onValueChange={(v) => setMotor(v as "INTERNO" | "PYTHON")}
-                disabled={processando}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="INTERNO">Usar IA</SelectItem>
-                  <SelectItem value="PYTHON" disabled={!localDisponivel}>
-                    Usar Local{localDisponivel ? "" : " (serviço indisponível)"}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                A leitura pode ser feita pelo serviço do órgão (Local). A identificação de
-                licitantes, ocorrências e linha do tempo continua sendo feita pela IA.
-              </p>
-            </div>
+            <p className="rounded-md border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
+              Esta análise será feita {motor === "PYTHON" ? "pelo serviço local do órgão" : "pela inteligência artificial"}.
+              A escolha fica no alto da tela e vale para todo o sistema.
+              {!localDisponivel
+                ? " O serviço local só fica disponível depois que o administrador informa o endereço em Configurações."
+                : ""}
+            </p>
+
 
             <div className="grid gap-2 sm:max-w-xs">
               <span className="label-field">Categoria do documento</span>

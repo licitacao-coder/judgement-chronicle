@@ -26,6 +26,7 @@ import {
 import { redigirRelato } from "@/lib/pipeline.functions";
 import { gerarRelatorioWord, reservarNumeroRelatorio } from "@/lib/relatorio.functions";
 import { useAuth, registrarAuditoria } from "@/lib/useAuth";
+import { useMotorGlobal } from "@/lib/useMotorGlobal";
 
 export const Route = createFileRoute("/processos/$processoId")({
   head: () => ({
@@ -88,6 +89,7 @@ function montarModalidade(
 function PaginaProcesso() {
   const { processoId } = Route.useParams();
   const { perfil } = useAuth();
+  const { motor } = useMotorGlobal();
   const queryClient = useQueryClient();
   const [ocorrenciaId, setOcorrenciaId] = useState<string | null>(null);
   const [campos, setCampos] = useState<Campos>({});
@@ -204,7 +206,9 @@ function PaginaProcesso() {
     if (!ocorrencia) return;
     setOcupado(true);
     try {
-      const r = await redigirRelato({ data: { ocorrenciaId: String(ocorrencia["id"]) } });
+      const r = await redigirRelato({
+        data: { ocorrenciaId: String(ocorrencia["id"]), motor },
+      });
       setCampos((c) => ({
         ...c,
         RELATO: r.relato || (c["RELATO"] ?? ""),

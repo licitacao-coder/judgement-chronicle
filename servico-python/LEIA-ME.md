@@ -59,7 +59,16 @@ CHAVE_SERVICO="sua-chave-secreta-longa" uvicorn main:app --host 0.0.0.0 --port 8
 | --- | --- |
 | `GET /situacao` | Versão do serviço e se o OCR está instalado. |
 | `POST /itens-aceitos` | Itens "Aceito e Habilitado" com licitante, CNPJ, valores, referência e evidência. |
-| `POST /texto` | Texto integral do documento, para uso na análise do relatório de ocorrência. |
+| `POST /texto` | Texto integral do documento. |
+| `POST /analise` | Dados do certame, licitantes, ocorrências, linha do tempo e enquadramento preliminar. |
+| `POST /redacao` | Relato, providências e repercussão em texto corrido. |
+
+Com o serviço instalado e a opção **Usar Local** escolhida no alto do aplicativo, todas as
+etapas passam a ser feitas aqui, sem uso de inteligência artificial: leitura e OCR,
+identificação do certame e dos licitantes, ocorrências, linha do tempo, enquadramento
+preliminar e redação do relatório. A leitura local segue regras de texto; documentos fora
+do padrão podem gerar menos ocorrências e textos mais secos, sempre sujeitos a conferência
+humana.
 
 ## Segurança
 

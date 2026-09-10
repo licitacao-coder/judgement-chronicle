@@ -23,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { obterConfigMotor } from "@/lib/motores.functions";
+import { useMotorGlobal } from "@/lib/useMotorGlobal";
 import { processarDocumento } from "@/lib/pipeline.functions";
 import {
   extrairItensAceitos,
@@ -99,23 +99,14 @@ function PaginaPainel() {
   const [previa, setPrevia] = useState<Registro[] | null>(null);
   const [ocupado, setOcupado] = useState(false);
   const [detalhe, setDetalhe] = useState<Registro | null>(null);
-  const [motor, setMotor] = useState<"INTERNO" | "PYTHON">("INTERNO");
   const [leitura, setLeitura] = useState<{
     motor: "INTERNO" | "PYTHON";
     versao: string | null;
     duracao: number | null;
   } | null>(null);
 
-  const { data: configMotor } = useQuery({
-    queryKey: ["configuracao_motor"],
-    queryFn: () => obterConfigMotor(),
-  });
-  const pythonDisponivel =
-    !!configMotor?.endereco_servico && configMotor.situacao === "ATIVO";
+  const { motor, localDisponivel: pythonDisponivel, versaoLocal } = useMotorGlobal();
 
-  useEffect(() => {
-    if (configMotor?.motor_padrao === "PYTHON" && pythonDisponivel) setMotor("PYTHON");
-  }, [configMotor?.motor_padrao, pythonDisponivel]);
 
 
 
@@ -316,7 +307,7 @@ function PaginaPainel() {
         .single();
       if (erroDoc || !doc) throw new Error(erroDoc?.message ?? "Falha ao registrar o documento.");
 
-      const leitura = await processarDocumento({ data: { documentoId: doc.id } });
+      const leitura = await processarDocumento({ data: { documentoId: doc.id, motor } });
       toast.success(`Leitura concluída: ${leitura.paginas} página(s).`);
       await queryClient.invalidateQueries({ queryKey: ["documentos"] });
       setDocumentoId(doc.id);
@@ -572,26 +563,17 @@ function PaginaPainel() {
               </Select>
             </div>
             <div className="grid gap-2">
-              <span className="label-field">Como analisar o documento</span>
-              <Select value={motor} onValueChange={(v) => setMotor(v as "INTERNO" | "PYTHON")}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="INTERNO">Usar IA</SelectItem>
-                  <SelectItem value="PYTHON" disabled={!pythonDisponivel}>
-                    {pythonDisponivel
-                      ? `Usar Local${configMotor?.versao_servico ? ` · ${configMotor.versao_servico}` : ""}`
-                      : "Usar Local · indisponível"}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-              {!pythonDisponivel ? (
-                <p className="text-xs text-muted-foreground">
-                  A opção “Usar Local” fica disponível depois que o administrador informa o endereço
-                  do serviço em Configurações e a conexão é confirmada.
-                </p>
-              ) : null}
+              <p className="rounded-md border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
+                A análise será feita{" "}
+                {motor === "PYTHON"
+                  ? `pelo serviço local do órgão${versaoLocal ? ` (${versaoLocal})` : ""}`
+                  : "pela inteligência artificial"}
+                . A escolha fica no alto da tela e vale para todo o sistema.
+                {!pythonDisponivel
+                  ? " O serviço local só fica disponível depois que o administrador informa o endereço em Configurações."
+                  : ""}
+              </p>
+
 
               {leitura ? (
                 <p className="text-xs text-muted-foreground">
