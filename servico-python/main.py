@@ -114,3 +114,38 @@ def texto_documento(
     conferir_chave(x_chave_servico)
     texto, usou_ocr = obter_texto(pedido)
     return {"versao": VERSAO, "ocr_utilizado": usou_ocr, "texto": texto}
+
+
+@app.post("/analise")
+def analise_documento(
+    pedido: PedidoDocumento,
+    x_chave_servico: str | None = Header(default=None),
+) -> dict[str, Any]:
+    """Certame, licitantes, ocorrências, linha do tempo e enquadramento preliminar."""
+    conferir_chave(x_chave_servico)
+    texto, usou_ocr = obter_texto(pedido)
+    resultado = analisar(texto)
+    return {"versao": VERSAO, "ocr_utilizado": usou_ocr, **resultado}
+
+
+class PedidoRedacao(BaseModel):
+    certame: str | None = None
+    objeto: str | None = None
+    licitante: str | None = None
+    cnpj: str | None = None
+    tipo_ocorrencia: str | None = None
+    resumo: str | None = None
+    manifestacao: str | None = None
+    eventos: list[dict[str, Any]] = Field(default_factory=list)
+
+
+@app.post("/redacao")
+def redacao(
+    pedido: PedidoRedacao,
+    x_chave_servico: str | None = Header(default=None),
+) -> dict[str, Any]:
+    conferir_chave(x_chave_servico)
+    if len(pedido.eventos) > 200:
+        raise HTTPException(status_code=413, detail="Quantidade de eventos acima do limite.")
+    texto = redigir(pedido.model_dump())
+    return {"versao": VERSAO, **texto}
