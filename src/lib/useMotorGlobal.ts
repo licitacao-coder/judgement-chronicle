@@ -20,10 +20,16 @@ function lerGravado(): Motor {
  */
 export function useMotorGlobal() {
   const [motor, setMotorEstado] = useState<Motor>("INTERNO");
+  const { user, carregando } = useAuth();
 
+  // Sem sessão (tela de entrada) a configuração não é consultada: a função do
+  // servidor exige autenticação e, sem ela, a tela ficava em branco.
   const { data: config } = useQuery({
     queryKey: ["configuracao_motor"],
     queryFn: () => obterConfigMotor(),
+    enabled: !carregando && !!user,
+    retry: false,
+    staleTime: 60_000,
   });
   const localDisponivel = !!config?.endereco_servico && config.situacao === "ATIVO";
 
