@@ -405,18 +405,42 @@ export const redigirRelato = createServerFn({ method: "POST" })
       ),
     ].join("\n");
 
-    const resposta = await chamarIA(
-      [
-        { role: "system", content: "Responda exclusivamente com JSON válido." },
-        { role: "user", content: promptRedacao(contexto) },
-      ],
-      { json: true },
-    );
-    const texto = extrairJson<{
-      relato?: string;
-      providencias?: string;
-      repercussao?: string;
-    }>(resposta);
+    let texto: { relato?: string; providencias?: string; repercussao?: string };
+
+    if (data.motor === "PYTHON") {
+      const endereco = await enderecoLocal(supabase as never);
+      const { redigirLocal } = await import("./motores/analiseLocal.server");
+      texto = await redigirLocal(endereco, {
+        certame: [
+          o.processos?.["modalidade"] ?? "",
+          o.processos?.["numero_certame"]
+            ? `nº ${o.processos["numero_certame"]}/${o.processos?.["ano_certame"] ?? ""}`
+            : "",
+        ]
+          .filter(Boolean)
+          .join(" "),
+        objeto: o.processos?.["objeto"] ?? null,
+        licitante: o.licitantes?.["razao_social"] ?? null,
+        cnpj: o.licitantes?.["cnpj_cpf"] ?? null,
+        tipo_ocorrencia: o.tipo_ocorrencia,
+        resumo: o.descricao_resumida,
+        manifestacao: o.manifestacao,
+        eventos: eventos as unknown as Record<string, unknown>[],
+      });
+    } else {
+      const resposta = await chamarIA(
+        [
+          { role: "system", content: "Responda exclusivamente com JSON válido." },
+          { role: "user", content: promptRedacao(contexto) },
+        ],
+        { json: true },
+      );
+      texto = extrairJson<{
+        relato?: string;
+        providencias?: string;
+        repercussao?: string;
+      }>(resposta);
+    }
 
     await supabase
       .from("ocorrencias")
