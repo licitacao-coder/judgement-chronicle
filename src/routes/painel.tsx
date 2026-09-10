@@ -563,26 +563,17 @@ function PaginaPainel() {
               </Select>
             </div>
             <div className="grid gap-2">
-              <span className="label-field">Como analisar o documento</span>
-              <Select value={motor} onValueChange={(v) => setMotor(v as "INTERNO" | "PYTHON")}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="INTERNO">Usar IA</SelectItem>
-                  <SelectItem value="PYTHON" disabled={!pythonDisponivel}>
-                    {pythonDisponivel
-                      ? `Usar Local${configMotor?.versao_servico ? ` · ${configMotor.versao_servico}` : ""}`
-                      : "Usar Local · indisponível"}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-              {!pythonDisponivel ? (
-                <p className="text-xs text-muted-foreground">
-                  A opção “Usar Local” fica disponível depois que o administrador informa o endereço
-                  do serviço em Configurações e a conexão é confirmada.
-                </p>
-              ) : null}
+              <p className="rounded-md border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
+                A análise será feita{" "}
+                {motor === "PYTHON"
+                  ? `pelo serviço local do órgão${versaoLocal ? ` (${versaoLocal})` : ""}`
+                  : "pela inteligência artificial"}
+                . A escolha fica no alto da tela e vale para todo o sistema.
+                {!pythonDisponivel
+                  ? " O serviço local só fica disponível depois que o administrador informa o endereço em Configurações."
+                  : ""}
+              </p>
+
 
               {leitura ? (
                 <p className="text-xs text-muted-foreground">
