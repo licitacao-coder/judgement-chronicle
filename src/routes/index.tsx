@@ -107,6 +107,15 @@ function Painel() {
     },
   });
 
+  const { data: configMotor } = useQuery({
+    queryKey: ["configuracao_motor"],
+    queryFn: () => obterConfigMotor(),
+  });
+  const localDisponivel =
+    !!configMotor?.endereco_servico && configMotor.situacao === "ATIVO";
+
+
+
   async function enviar(arquivo: File) {
     setProcessando(true);
     setEtapa(0);
