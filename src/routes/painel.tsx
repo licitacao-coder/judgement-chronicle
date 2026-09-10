@@ -571,26 +571,27 @@ function PaginaPainel() {
               </Select>
             </div>
             <div className="grid gap-2">
-              <span className="label-field">Motor de leitura</span>
+              <span className="label-field">Como analisar o documento</span>
               <Select value={motor} onValueChange={(v) => setMotor(v as "INTERNO" | "PYTHON")}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="INTERNO">Motor interno (padrão)</SelectItem>
+                  <SelectItem value="INTERNO">Usar IA</SelectItem>
                   <SelectItem value="PYTHON" disabled={!pythonDisponivel}>
                     {pythonDisponivel
-                      ? `Motor Python do órgão${configMotor?.versao_servico ? ` · ${configMotor.versao_servico}` : ""}`
-                      : "Motor Python do órgão · serviço indisponível"}
+                      ? `Usar Local${configMotor?.versao_servico ? ` · ${configMotor.versao_servico}` : ""}`
+                      : "Usar Local · indisponível"}
                   </SelectItem>
                 </SelectContent>
               </Select>
               {!pythonDisponivel ? (
                 <p className="text-xs text-muted-foreground">
-                  Para usar o motor Python, o administrador informa o endereço do serviço em
-                  Configurações e confirma a conexão.
+                  A opção “Usar Local” fica disponível depois que o administrador informa o endereço
+                  do serviço em Configurações e a conexão é confirmada.
                 </p>
               ) : null}
+
               {leitura ? (
                 <p className="text-xs text-muted-foreground">
                   Última leitura pelo{" "}
