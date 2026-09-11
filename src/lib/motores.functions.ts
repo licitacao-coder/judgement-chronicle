@@ -71,15 +71,23 @@ export const salvarConfigMotor = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await garantirAdmin(context);
     const supabase = context.supabase;
-    const bruto = data.endereco && data.endereco.length > 0 ? data.endereco.replace(/\/+$/, "") : null;
-    // Aceita endereço sem prefixo (ex.: meu-tunel.trycloudflare.com) assumindo https.
-    const endereco = bruto
-      ? /^https?:\/\//i.test(bruto)
-        ? bruto
-        : `https://${bruto}`
-      : null;
-    if (endereco && !/^https?:\/\/[^\s/]+\.?[^\s]*$/i.test(endereco)) {
-      throw new Error("Endereço inválido. Exemplo: https://meu-servico.trycloudflare.com");
+    // Aceita colagens com espaços, sem prefixo (ex.: meu-tunel.trycloudflare.com) e com barra/caminho final.
+    const bruto = (data.endereco ?? "").replace(/\s+/g, "");
+    let endereco: string | null = null;
+    if (bruto.length > 0) {
+      const comPrefixo = /^https?:\/\//i.test(bruto) ? bruto : `https://${bruto}`;
+      let url: URL;
+      try {
+        url = new URL(comPrefixo);
+      } catch {
+        throw new Error("Endereço inválido. Exemplo: https://meu-servico.trycloudflare.com");
+      }
+      if (!url.hostname) {
+        throw new Error("Endereço inválido. Exemplo: https://meu-servico.trycloudflare.com");
+      }
+      // Guarda apenas origem + caminho base, sem barra final e sem /situacao.
+      const caminho = url.pathname.replace(/\/+$/, "").replace(/\/(situacao|texto|analise|redacao|itens-aceitos)$/i, "");
+      endereco = `${url.origin}${caminho}`;
     }
 
     if (data.motorPadrao === "PYTHON" && !endereco) {
