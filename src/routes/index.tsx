@@ -129,7 +129,7 @@ function Painel() {
 
       const { data: sessao } = await supabase.auth.getUser();
       const usuarioId = sessao.user!.id;
-      const nomeArmazenado = `${crypto.randomUUID()}.${extensao}`;
+      const nomeArmazenado = `${idAleatorio()}.${extensao}`;
       const caminho = `${usuarioId}/${nomeArmazenado}`;
       const { error: erroUpload } = await supabase.storage
         .from("documentos")

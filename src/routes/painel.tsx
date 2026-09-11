@@ -277,7 +277,7 @@ function PaginaPainel() {
       const hash = await sha256(arquivo);
       const { data: sessao } = await supabase.auth.getUser();
       const usuarioId = sessao.user!.id;
-      const nomeArmazenado = `${crypto.randomUUID()}.${extensao}`;
+      const nomeArmazenado = `${idAleatorio()}.${extensao}`;
       const caminho = `${usuarioId}/${nomeArmazenado}`;
       const { error: erroUpload } = await supabase.storage
         .from("documentos")
