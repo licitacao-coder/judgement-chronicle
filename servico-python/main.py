@@ -34,6 +34,38 @@ TAMANHO_MAXIMO_MB = int(os.environ.get("TAMANHO_MAXIMO_MB", "40"))
 app = FastAPI(title="Leitor de documentos de licitação", version=VERSAO)
 
 
+PASTAS_PROVAVEIS = [
+    os.environ.get("TESSERACT_PASTA", ""),
+    os.environ.get("POPPLER_PASTA", ""),
+    r"C:\Program Files\Tesseract-OCR",
+    r"C:\Program Files (x86)\Tesseract-OCR",
+    os.path.expandvars(r"%LOCALAPPDATA%\Programs\Tesseract-OCR"),
+    os.path.expandvars(r"%LOCALAPPDATA%\Tesseract-OCR"),
+]
+
+
+def registrar_programas_externos() -> None:
+    """Windows: winget instala Tesseract/Poppler sem colocá-los no PATH da sessão."""
+    extras = [p for p in PASTAS_PROVAVEIS if p and os.path.isdir(p)]
+    # Poppler é instalado em pastas com versão (…/poppler-25.07.0/Library/bin).
+    for raiz in [
+        os.path.expandvars(r"%LOCALAPPDATA%\Microsoft\WinGet\Packages"),
+        r"C:\Program Files",
+    ]:
+        if not os.path.isdir(raiz):
+            continue
+        for atual, pastas, _ in os.walk(raiz):
+            if os.path.basename(atual).lower() == "bin" and "poppler" in atual.lower():
+                extras.append(atual)
+            if atual.count(os.sep) - raiz.count(os.sep) > 4:
+                pastas[:] = []
+    if extras:
+        os.environ["PATH"] = os.pathsep.join(extras + [os.environ.get("PATH", "")])
+
+
+registrar_programas_externos()
+
+
 def ocr_disponivel() -> bool:
     return shutil.which("tesseract") is not None
 
