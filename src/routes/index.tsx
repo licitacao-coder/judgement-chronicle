@@ -31,6 +31,7 @@ import { processarDocumento, analisarDocumento } from "@/lib/pipeline.functions"
 import { excluirProcesso } from "@/lib/exclusao.functions";
 import { useMotorGlobal } from "@/lib/useMotorGlobal";
 import { useAuth } from "@/lib/useAuth";
+import { sha256Arquivo, idAleatorio } from "@/lib/hashArquivo";
 
 
 export const Route = createFileRoute("/")({

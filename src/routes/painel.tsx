@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { useMotorGlobal } from "@/lib/useMotorGlobal";
 import { processarDocumento } from "@/lib/pipeline.functions";
+import { sha256Arquivo, idAleatorio } from "@/lib/hashArquivo";
 import {
   extrairItensAceitos,
   salvarImportacaoPainel,
