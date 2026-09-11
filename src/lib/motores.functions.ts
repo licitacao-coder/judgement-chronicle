@@ -71,10 +71,17 @@ export const salvarConfigMotor = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await garantirAdmin(context);
     const supabase = context.supabase;
-    const endereco = data.endereco && data.endereco.length > 0 ? data.endereco : null;
-    if (endereco && !/^https?:\/\//i.test(endereco)) {
-      throw new Error("Informe o endereço completo do serviço, começando por http:// ou https://");
+    const bruto = data.endereco && data.endereco.length > 0 ? data.endereco.replace(/\/+$/, "") : null;
+    // Aceita endereço sem prefixo (ex.: meu-tunel.trycloudflare.com) assumindo https.
+    const endereco = bruto
+      ? /^https?:\/\//i.test(bruto)
+        ? bruto
+        : `https://${bruto}`
+      : null;
+    if (endereco && !/^https?:\/\/[^\s/]+\.?[^\s]*$/i.test(endereco)) {
+      throw new Error("Endereço inválido. Exemplo: https://meu-servico.trycloudflare.com");
     }
+
     if (data.motorPadrao === "PYTHON" && !endereco) {
       throw new Error("Informe o endereço do serviço Python antes de torná-lo o motor padrão.");
     }
