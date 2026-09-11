@@ -62,11 +62,7 @@ const ROTULO_CATEGORIA: Record<string, string> = {
   OUTRO: "Outro documento equivalente",
 };
 
-async function sha256(arquivo: File): Promise<string> {
-  const buf = await arquivo.arrayBuffer();
-  const hash = await crypto.subtle.digest("SHA-256", buf);
-  return [...new Uint8Array(hash)].map((b) => b.toString(16).padStart(2, "0")).join("");
-}
+const sha256 = sha256Arquivo;
 
 function Painel() {
   const navigate = useNavigate();
