@@ -31,6 +31,7 @@ import { processarDocumento, analisarDocumento } from "@/lib/pipeline.functions"
 import { excluirProcesso } from "@/lib/exclusao.functions";
 import { useMotorGlobal } from "@/lib/useMotorGlobal";
 import { useAuth } from "@/lib/useAuth";
+import { sha256Arquivo, idAleatorio } from "@/lib/hashArquivo";
 
 
 export const Route = createFileRoute("/")({
@@ -62,11 +63,7 @@ const ROTULO_CATEGORIA: Record<string, string> = {
   OUTRO: "Outro documento equivalente",
 };
 
-async function sha256(arquivo: File): Promise<string> {
-  const buf = await arquivo.arrayBuffer();
-  const hash = await crypto.subtle.digest("SHA-256", buf);
-  return [...new Uint8Array(hash)].map((b) => b.toString(16).padStart(2, "0")).join("");
-}
+const sha256 = sha256Arquivo;
 
 function Painel() {
   const navigate = useNavigate();
@@ -132,7 +129,7 @@ function Painel() {
 
       const { data: sessao } = await supabase.auth.getUser();
       const usuarioId = sessao.user!.id;
-      const nomeArmazenado = `${crypto.randomUUID()}.${extensao}`;
+      const nomeArmazenado = `${idAleatorio()}.${extensao}`;
       const caminho = `${usuarioId}/${nomeArmazenado}`;
       const { error: erroUpload } = await supabase.storage
         .from("documentos")

@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { useMotorGlobal } from "@/lib/useMotorGlobal";
 import { processarDocumento } from "@/lib/pipeline.functions";
+import { sha256Arquivo, idAleatorio } from "@/lib/hashArquivo";
 import {
   extrairItensAceitos,
   salvarImportacaoPainel,
@@ -80,11 +81,7 @@ const ROTULO_ORIGEM: Record<string, string> = {
   MELHOR_LANCE: "Melhor lance",
 };
 
-async function sha256(arquivo: File): Promise<string> {
-  const buf = await arquivo.arrayBuffer();
-  const hash = await crypto.subtle.digest("SHA-256", buf);
-  return [...new Uint8Array(hash)].map((b) => b.toString(16).padStart(2, "0")).join("");
-}
+const sha256 = sha256Arquivo;
 
 type Registro = ItemPainel & { id?: string };
 
@@ -280,7 +277,7 @@ function PaginaPainel() {
       const hash = await sha256(arquivo);
       const { data: sessao } = await supabase.auth.getUser();
       const usuarioId = sessao.user!.id;
-      const nomeArmazenado = `${crypto.randomUUID()}.${extensao}`;
+      const nomeArmazenado = `${idAleatorio()}.${extensao}`;
       const caminho = `${usuarioId}/${nomeArmazenado}`;
       const { error: erroUpload } = await supabase.storage
         .from("documentos")
