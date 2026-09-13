@@ -4,6 +4,18 @@ O serviço roda no seu computador (ou num servidor do órgão) e o aplicativo o 
 pela internet. Ele apenas lê documentos e devolve os dados encontrados; nunca conclui
 responsabilidade, dolo, má-fé, penalidade ou sanção.
 
+## Atalho: ligar tudo com dois cliques
+
+Depois de instalar os programas do passo 1, basta abrir a pasta `servico-python` e
+clicar duas vezes em **INICIAR.bat**. Ele liga o leitor de documentos, cria o
+endereço seguro na internet (e já copia esse endereço para a área de transferência),
+liga o aplicativo e abre o navegador no endereço certo.
+
+Para desligar tudo, clique duas vezes em **PARAR.bat**.
+
+Se você só quer usar no próprio computador, sem internet:
+`powershell -ExecutionPolicy Bypass -File .\iniciar-tudo.ps1 -SemTunel`
+
 ## 1. Programas necessários (uma única vez)
 
 Abra o **PowerShell como administrador** e execute:
