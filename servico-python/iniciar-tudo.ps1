@@ -103,14 +103,19 @@ if (-not $SemAplicativo) {
     $enderecoApp = "https://judgement-chronicle.lovable.app"
   } else {
     if (-not (Test-Path (Join-Path $pastaProjeto "node_modules"))) {
-      Ok "Instalando o aplicativo (primeira vez leva alguns minutos)..."
-      Start-Process -FilePath "cmd.exe" -ArgumentList "/c", "npm install" `
+      Ok "Instalando o aplicativo. Abri uma janela para voce acompanhar."
+      Aviso "Na primeira vez pode levar de 3 a 10 minutos. Nao feche a janela."
+      Start-Process -FilePath "cmd.exe" `
+        -ArgumentList "/c", "title Instalando o aplicativo && npm install" `
         -WorkingDirectory $pastaProjeto -Wait
     }
     Ok "Iniciando o aplicativo em $enderecoApp ..."
     Start-Process -FilePath "cmd.exe" -ArgumentList "/c", "npm run dev" `
       -WorkingDirectory $pastaProjeto -WindowStyle Minimized
-    Esperar $enderecoApp 120 "O aplicativo" | Out-Null
+    if (-not (Esperar $enderecoApp 180 "O aplicativo")) {
+      Aviso "Sera aberto o site publicado enquanto o aplicativo local termina de subir."
+      $enderecoApp = "https://judgement-chronicle.lovable.app"
+    }
   }
 } else {
   $enderecoApp = "https://judgement-chronicle.lovable.app"
