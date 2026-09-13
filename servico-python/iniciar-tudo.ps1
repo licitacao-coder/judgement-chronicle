@@ -45,6 +45,9 @@ if (Responde "http://127.0.0.1:8000/situacao") {
     & python -m venv .venv
   }
   $py = Join-Path $pastaServico ".venv\Scripts\python.exe"
+  # Limpa sobras de instalacoes anteriores (avisos "invalid distribution ~ip").
+  Get-ChildItem -Path (Join-Path $pastaServico ".venv\Lib\site-packages") -Filter "~*" -Force -ErrorAction SilentlyContinue |
+    Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
   & $py -m pip install --upgrade pip --quiet
   & $py -m pip install -r requirements.txt --quiet
   Ok "Iniciando o leitor em http://127.0.0.1:8000 ..."
