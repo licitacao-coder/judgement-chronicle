@@ -3,17 +3,28 @@ const MODELO_PADRAO = "google/gemini-3.1-pro-preview";
 
 export type Mensagem = { role: "system" | "user"; content: string };
 
-/** Chave da IA: primeiro a do ambiente, depois a cadastrada em Configurações. */
+/** Chave da IA: primeiro a do ambiente, depois a cadastrada em Configurações.
+ *  Quando a chave administrativa do banco não está disponível (por exemplo em
+ *  execução no computador do usuário), a leitura é tentada com o próprio acesso
+ *  do usuário, sem interromper a análise com erro técnico. */
 export async function obterChaveIA(): Promise<{ chave: string | null; modelo: string | null }> {
   const doAmbiente = process.env["LOVABLE_API_KEY"];
   if (doAmbiente) return { chave: doAmbiente, modelo: null };
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin
-    .from("configuracao_ia")
-    .select("chave, modelo")
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
+
+  let data: { chave?: string | null; modelo?: string | null } | null = null;
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const resposta = await supabaseAdmin
+      .from("configuracao_ia")
+      .select("chave, modelo")
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    data = resposta.data;
+  } catch {
+    data = null;
+  }
+
   const chave = data?.chave?.trim();
   return { chave: chave && chave.length > 0 ? chave : null, modelo: data?.modelo ?? null };
 }
