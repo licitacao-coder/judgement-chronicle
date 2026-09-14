@@ -63,7 +63,7 @@ function PaginaDocumentos() {
       const { data, error } = await supabase
         .from("documentos")
         .select(
-          "id, nome_original, categoria, extensao, tamanho, quantidade_paginas, status_processamento, data_upload, caminho_arquivo",
+          "id, nome_original, categoria, extensao, tamanho, quantidade_paginas, status_processamento, data_upload, caminho_arquivo, motor, motor_versao, duracao_ms",
         )
         .order("data_upload", { ascending: false });
       if (error) throw error;
