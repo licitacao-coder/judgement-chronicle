@@ -309,6 +309,15 @@ function PaginaProcessos() {
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 text-xs">
+                      <Badge variant={p.documentos?.motor === "PYTHON" ? "outline" : "default"}>
+                        {p.documentos?.motor === "PYTHON"
+                          ? "Análise: serviço local"
+                          : "Análise: IA"}
+                        {p.documentos?.motor_versao ? ` · ${p.documentos.motor_versao}` : ""}
+                        {p.documentos?.duracao_ms
+                          ? ` · ${(Number(p.documentos.duracao_ms) / 1000).toFixed(1)}s`
+                          : ""}
+                      </Badge>
                       <Badge variant="secondary">{p.licitantes?.length ?? 0} licitantes</Badge>
                       <Badge variant="secondary">{p.ocorrencias?.length ?? 0} ocorrências</Badge>
                       <Badge>
