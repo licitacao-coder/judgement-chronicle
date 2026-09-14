@@ -125,7 +125,12 @@ function PaginaProcessos() {
       data_sessao: string | null;
       licitantes: unknown[];
       ocorrencias: unknown[];
-      documentos: { nome_original: string } | null;
+      documentos: {
+        nome_original: string;
+        motor?: string | null;
+        motor_versao?: string | null;
+        duracao_ms?: number | null;
+      } | null;
     }[];
     if (!alvo) return todos;
     return todos.filter((p) =>
