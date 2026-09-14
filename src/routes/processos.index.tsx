@@ -84,7 +84,7 @@ function PaginaProcessos() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("processos")
-        .select("*, licitantes(id), ocorrencias(id), documentos(nome_original)")
+        .select("*, licitantes(id), ocorrencias(id), documentos(nome_original, motor, motor_versao, duracao_ms)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
@@ -125,7 +125,12 @@ function PaginaProcessos() {
       data_sessao: string | null;
       licitantes: unknown[];
       ocorrencias: unknown[];
-      documentos: { nome_original: string } | null;
+      documentos: {
+        nome_original: string;
+        motor?: string | null;
+        motor_versao?: string | null;
+        duracao_ms?: number | null;
+      } | null;
     }[];
     if (!alvo) return todos;
     return todos.filter((p) =>
@@ -304,6 +309,15 @@ function PaginaProcessos() {
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 text-xs">
+                      <Badge variant={p.documentos?.motor === "PYTHON" ? "outline" : "default"}>
+                        {p.documentos?.motor === "PYTHON"
+                          ? "Análise: serviço local"
+                          : "Análise: IA"}
+                        {p.documentos?.motor_versao ? ` · ${p.documentos.motor_versao}` : ""}
+                        {p.documentos?.duracao_ms
+                          ? ` · ${(Number(p.documentos.duracao_ms) / 1000).toFixed(1)}s`
+                          : ""}
+                      </Badge>
                       <Badge variant="secondary">{p.licitantes?.length ?? 0} licitantes</Badge>
                       <Badge variant="secondary">{p.ocorrencias?.length ?? 0} ocorrências</Badge>
                       <Badge>
