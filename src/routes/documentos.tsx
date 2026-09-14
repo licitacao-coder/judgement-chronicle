@@ -138,6 +138,11 @@ function PaginaDocumentos() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
+                  <Badge variant={d.motor === "PYTHON" ? "outline" : "default"}>
+                    {d.motor === "PYTHON" ? "Analisado pelo serviço local" : "Analisado pela IA"}
+                    {d.motor_versao ? ` · ${d.motor_versao}` : ""}
+                    {d.duracao_ms ? ` · ${(Number(d.duracao_ms) / 1000).toFixed(1)}s` : ""}
+                  </Badge>
                   <Badge variant="secondary">{d.status_processamento}</Badge>
                   <Button size="sm" variant="outline" onClick={() => void baixar(d.caminho_arquivo)}>
                     Baixar
