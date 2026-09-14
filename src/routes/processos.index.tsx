@@ -84,7 +84,7 @@ function PaginaProcessos() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("processos")
-        .select("*, licitantes(id), ocorrencias(id), documentos(nome_original)")
+        .select("*, licitantes(id), ocorrencias(id), documentos(nome_original, motor, motor_versao, duracao_ms)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
