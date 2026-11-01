@@ -24,6 +24,7 @@ import { placeholdersTemplate } from "@/lib/admin.functions";
 import {
   obterConfigIA,
   salvarConfigIA,
+  testarChaveIA,
   obterConfigMotor,
   salvarConfigMotor,
   testarConexaoMotor,
@@ -132,6 +133,23 @@ function Configuracoes() {
       await queryClient.invalidateQueries({ queryKey: ["configuracao_ia"] });
     } catch (e) {
       toast.error("Não foi possível salvar", {
+        description: e instanceof Error ? e.message : String(e),
+      });
+    } finally {
+      setOcupadoIA(false);
+    }
+  }
+
+  async function testarIA() {
+    setOcupadoIA(true);
+    try {
+      const r = await testarChaveIA();
+      await queryClient.invalidateQueries({ queryKey: ["configuracao_ia"] });
+      toast.success(
+        `A chave respondeu (${r.provedor === "ANTHROPIC" ? "Claude" : "IA do aplicativo"}${r.modelo ? `, modelo ${r.modelo}` : ""}) em ${(r.duracaoMs / 1000).toFixed(1)}s.`,
+      );
+    } catch (e) {
+      toast.error("A chave não respondeu", {
         description: e instanceof Error ? e.message : String(e),
       });
     } finally {
@@ -265,7 +283,9 @@ function Configuracoes() {
               <CardContent className="grid gap-4">
                 <p className="text-sm text-muted-foreground">
                   Guarde aqui a chave usada nas análises por IA. No aplicativo publicado ela já vem
-                  configurada; na cópia executada no seu computador é preciso cadastrá-la.
+                  configurada; na cópia executada no seu computador é preciso cadastrá-la. Também é
+                  aceita a chave do Claude (Anthropic), que começa por “sk-ant-” — com ela, todas as
+                  análises passam a ser feitas pelo Claude.
                 </p>
                 <div className="grid gap-2 sm:max-w-md">
                   <Label>Chave da IA</Label>
@@ -285,20 +305,32 @@ function Configuracoes() {
                   <Input
                     value={modeloIA}
                     onChange={(e) => setModeloIA(e.target.value)}
-                    placeholder="google/gemini-3.1-pro-preview"
+                    placeholder="claude-sonnet-5 (Claude) ou google/gemini-3.1-pro-preview"
                   />
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                   <Button onClick={() => void salvarIA()} disabled={ocupadoIA}>
                     {ocupadoIA ? "Salvando..." : "Salvar chave da IA"}
                   </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => void testarIA()}
+                    disabled={ocupadoIA}
+                  >
+                    {ocupadoIA ? "Testando..." : "Testar chave"}
+                  </Button>
                   <Badge variant={configIA?.chaveConfigurada ? "default" : "secondary"}>
-                    {configIA?.origem === "AMBIENTE"
-                      ? "Configurada no aplicativo"
-                      : configIA?.chaveConfigurada
-                        ? "Chave cadastrada"
-                        : "Sem chave"}
+                    {configIA?.provedor === "ANTHROPIC"
+                      ? "Chave do Claude (Anthropic)"
+                      : configIA?.origem === "AMBIENTE"
+                        ? "Configurada no aplicativo"
+                        : configIA?.chaveConfigurada
+                          ? "Chave cadastrada"
+                          : "Sem chave"}
                   </Badge>
+                  {configIA?.modelo ? (
+                    <span className="text-xs text-muted-foreground">Modelo: {configIA.modelo}</span>
+                  ) : null}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   A chave nunca é exibida de volta. Para apagá-la, digite REMOVER no campo e salve.

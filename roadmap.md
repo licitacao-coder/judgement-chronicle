@@ -27,6 +27,9 @@
 ## Concluído recentemente
 - Modo duplo de análise: motor interno (padrão) + serviço de leitura do órgão (Python/OCR) selecionável por documento, com registro do motor usado, aba de configuração para administrador, teste de conexão e opção de refazer no motor interno
 
+## Concluído recentemente
+- Suporte ao Claude (Anthropic) como motor de análise: chave iniciada por “sk-ant-” cadastrada em Configurações → Motores de análise direciona todas as análises à API do Claude, com escolha de modelo, botão de teste e selo do provedor ativo
+
 ## Pendente
 - Geração opcional de PDF
 - Teste ponta a ponta com os PDFs enviados (Pregão 9/2026, Grupo 1)

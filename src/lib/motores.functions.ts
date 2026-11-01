@@ -167,10 +167,32 @@ export const obterConfigIA = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async () => {
     const { obterChaveIA } = await import("./ia.server");
-    const { chave, modelo } = await obterChaveIA();
+    const { chave, modelo, provedor } = await obterChaveIA();
     return {
       chaveConfigurada: !!chave,
-      origem: process.env["LOVABLE_API_KEY"] ? "AMBIENTE" : chave ? "CADASTRADA" : "AUSENTE",
+      origem: process.env["LOVABLE_API_KEY"] && provedor === "LOVABLE" ? "AMBIENTE" : chave ? "CADASTRADA" : "AUSENTE",
+      modelo,
+      provedor,
+    };
+  });
+
+/** Teste barato da chave da IA (uma palavra, sem análise de documento). */
+export const testarChaveIA = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await garantirAdmin(context);
+    const { chamarIA } = await import("./ia.server");
+    const inicio = Date.now();
+    const resposta = await chamarIA([
+      { role: "user", content: "Responda apenas com a palavra OK." },
+    ]);
+    const { obterChaveIA } = await import("./ia.server");
+    const { provedor, modelo } = await obterChaveIA();
+    return {
+      ok: true,
+      duracaoMs: Date.now() - inicio,
+      resposta: resposta.trim().slice(0, 40),
+      provedor,
       modelo,
     };
   });
