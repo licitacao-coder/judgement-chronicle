@@ -140,6 +140,23 @@ function Configuracoes() {
     }
   }
 
+  async function testarIA() {
+    setOcupadoIA(true);
+    try {
+      const r = await testarChaveIA();
+      await queryClient.invalidateQueries({ queryKey: ["configuracao_ia"] });
+      toast.success(
+        `A chave respondeu (${r.provedor === "ANTHROPIC" ? "Claude" : "IA do aplicativo"}${r.modelo ? `, modelo ${r.modelo}` : ""}) em ${(r.duracaoMs / 1000).toFixed(1)}s.`,
+      );
+    } catch (e) {
+      toast.error("A chave não respondeu", {
+        description: e instanceof Error ? e.message : String(e),
+      });
+    } finally {
+      setOcupadoIA(false);
+    }
+  }
+
   const { data: configMotor } = useQuery({
     queryKey: ["configuracao_motor"],
     queryFn: () => obterConfigMotor(),
